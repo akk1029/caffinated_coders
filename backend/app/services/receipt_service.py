@@ -19,6 +19,7 @@ from app.services.food_data import shelf_days, estimate_cost, SHELF_LIFE
 logger = logging.getLogger("pantrypet.receipt")
 
 VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
+OCR_SPACE_URL = "https://api.ocr.space/parse/image"
 
 # ── Malay (and a few common) grocery terms -> canonical English food name ──
 MALAY_TO_EN = {
@@ -81,7 +82,16 @@ async def incr_scan_count(user_id: str) -> int:
 # ── OCR + translation ─────────────────────────────────────────────────────────
 
 async def _ocr(image_bytes: bytes) -> str:
-    """Full-text OCR via the Google Vision REST API (API-key auth). Raises on error."""
+    """Full-text OCR. Prefers Google Vision (needs GCP billing); otherwise uses the
+    FREE OCR.space API (no billing/credit card) when OCR_SPACE_API_KEY is set."""
+    if settings.GOOGLE_API_KEY:
+        return await _ocr_google(image_bytes)
+    if settings.OCR_SPACE_API_KEY:
+        return await _ocr_ocrspace(image_bytes)
+    raise RuntimeError("No OCR provider configured")
+
+
+async def _ocr_google(image_bytes: bytes) -> str:
     payload = {
         "requests": [{
             "image": {"content": base64.b64encode(image_bytes).decode()},
@@ -95,6 +105,27 @@ async def _ocr(image_bytes: bytes) -> str:
     if "error" in resp:
         raise RuntimeError(resp["error"].get("message", "Vision API error"))
     return resp.get("fullTextAnnotation", {}).get("text", "")
+
+
+async def _ocr_ocrspace(image_bytes: bytes) -> str:
+    """Free OCR via OCR.space — no billing. Free tier limit is ~1 MB per image."""
+    data = {
+        "apikey": settings.OCR_SPACE_API_KEY,
+        "base64Image": "data:image/png;base64," + base64.b64encode(image_bytes).decode(),
+        "language": "eng",
+        "OCREngine": "2",
+        "isTable": "true",
+        "scale": "true",
+    }
+    async with httpx.AsyncClient(timeout=30) as client:
+        r = await client.post(OCR_SPACE_URL, data=data)
+        r.raise_for_status()
+        j = r.json()
+    if j.get("IsErroredOnProcessing"):
+        err = j.get("ErrorMessage")
+        msg = err[0] if isinstance(err, list) and err else (err or "OCR.space error")
+        raise RuntimeError(str(msg))
+    return "\n".join(p.get("ParsedText", "") for p in (j.get("ParsedResults") or []))
 
 
 # ── Parsing ──────────────────────────────────────────────────────────────────
@@ -153,8 +184,8 @@ def _parse(text: str) -> List[Dict]:
 
 async def scan_receipt(image_bytes: bytes) -> Dict:
     """Returns {items, demo, error}. Auto-adding is done by the router."""
-    if not settings.GOOGLE_API_KEY:
-        msg = "Receipt OCR not configured: GOOGLE_API_KEY is empty."
+    if not (settings.GOOGLE_API_KEY or settings.OCR_SPACE_API_KEY):
+        msg = "Receipt OCR not configured: set GOOGLE_API_KEY or OCR_SPACE_API_KEY."
         logger.warning(msg)
         return {"items": [], "demo": True, "error": msg}
     try:
@@ -162,8 +193,8 @@ async def scan_receipt(image_bytes: bytes) -> Dict:
         return {"items": _parse(text), "demo": False, "error": None}
     except httpx.HTTPStatusError as e:
         body = e.response.text[:300]
-        logger.error("Receipt Vision REST failed (%s): %s", e.response.status_code, body)
-        return {"items": [], "demo": True, "error": f"Vision API HTTP {e.response.status_code}: {body}"}
+        logger.error("Receipt OCR HTTP failed (%s): %s", e.response.status_code, body)
+        return {"items": [], "demo": True, "error": f"OCR API HTTP {e.response.status_code}: {body}"}
     except Exception as e:
         logger.exception("Receipt OCR failed")
         return {"items": [], "demo": True, "error": f"{type(e).__name__}: {e}"}

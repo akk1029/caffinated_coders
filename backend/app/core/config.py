@@ -14,8 +14,14 @@ class Settings(BaseSettings):
 
     # Google Cloud Vision — leave empty to use Application Default Credentials
     GOOGLE_APPLICATION_CREDENTIALS: str = ""
-    # Google API key (Vision + Translate via REST). Simpler than a service-account JSON.
+    # Google API key (Vision via REST). Needs billing enabled on the GCP project.
     GOOGLE_API_KEY: str = ""
+    # OCR.space — FREE receipt OCR, no billing/credit card. "helloworld" is the public
+    # demo key (rate-limited); register a free key at https://ocr.space/ocrapi for reliability.
+    OCR_SPACE_API_KEY: str = "helloworld"
+
+    # Create database tables on startup (lets you deploy without shell access to run init_db).
+    AUTO_INIT_DB: bool = True
 
     REDIS_URL: str = "redis://localhost:6379/0"
 

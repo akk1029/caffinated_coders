@@ -38,6 +38,25 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
 app.include_router(uploads.router, prefix="/api")
 
+
+@app.on_event("startup")
+async def _auto_init_db():
+    """Create database tables on boot so the app works on hosts WITHOUT shell
+    access (e.g. Render free tier). Idempotent — only creates missing tables."""
+    if not settings.AUTO_INIT_DB:
+        return
+    import logging
+    from app.core.database import Base, _get_engine
+    # Import every model so SQLAlchemy registers them before create_all
+    from app.models import user, inventory, pet, subscription, shelf_life, image_upload  # noqa: F401
+    try:
+        engine, _ = _get_engine()
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logging.getLogger("pantrypet").info("AUTO_INIT_DB: tables ensured.")
+    except Exception:
+        logging.getLogger("pantrypet").exception("AUTO_INIT_DB failed (app will still start)")
+
 # ─── Page routes (serve HTML) ─────────────────────────────────────────────────
 @app.get("/", response_class=RedirectResponse)
 async def root():
