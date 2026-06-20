@@ -211,12 +211,48 @@ select.form-input { cursor: pointer; }
 .hp-text  { font-size: 12px; color: var(--muted); margin-bottom: 18px; }
 
 /* ── Recipes ── */
-.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.recipe-card { background: var(--surface); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); }
-.recipe-img  { width: 100%; height: 140px; object-fit: cover; display: block; }
-.recipe-body { padding: 12px; }
+.recipe-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.recipe-card  { background: var(--surface); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.recipe-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+.recipe-img   { width: 100%; height: 140px; object-fit: cover; display: block; }
+.recipe-body  { padding: 12px; }
 .recipe-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
 .recipe-meta  { font-size: 12px; color: var(--muted); }
+.badge-expiring { display:inline-block; background:#fff3e0; color:#e65100; border-radius:6px; font-size:11px; font-weight:700; padding:2px 7px; margin-bottom:6px; }
+
+/* ── Recipe Modal ── */
+.recipe-modal {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.55); display: flex;
+  align-items: flex-end; justify-content: center;
+}
+.recipe-modal.hidden { display: none; }
+.recipe-modal-inner {
+  background: var(--surface); border-radius: 18px 18px 0 0;
+  width: 100%; max-width: 540px; max-height: 92vh;
+  overflow-y: auto; position: relative;
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.recipe-modal-close {
+  position: sticky; top: 12px; float: right; margin: 12px 12px 0 0;
+  background: var(--bg); border: none; border-radius: 50%;
+  width: 32px; height: 32px; font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.recipe-modal-img  { width: 100%; height: 200px; object-fit: cover; display: block; }
+.recipe-modal-body { padding: 16px; }
+.recipe-modal-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.recipe-steps { padding-left: 20px; }
+.recipe-steps li { font-size: 13px; line-height: 1.7; margin-bottom: 8px; }
+.ing-tag { display:inline-block; border-radius:6px; font-size:11px; padding:2px 7px; margin:2px; font-weight:600; }
+.ing-have    { background:#e8f5e9; color:#2e7d32; }
+.ing-missing { background:#fce4ec; color:#c62828; }
+.ing-expiring { background:#fff3e0; color:#e65100; }
 
 /* ── Leaderboard ── */
 @keyframes float {

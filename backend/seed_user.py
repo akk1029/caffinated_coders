@@ -1,5 +1,5 @@
 """
-Seed random data for an existing user by email.
+Seed ~200 pantry items for an existing user by email.
 Run from the backend/ directory:
     python seed_user.py
 """
@@ -14,31 +14,61 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.models.user import User, SubscriptionTier
+from app.models.user import User
 from app.models.pet import DigitalPet
 from app.models.inventory import IngredientBatch, BatchStatus
-from app.models.subscription import SubscriptionLog, PaymentStatus
+from app.models.subscription import SubscriptionLog  # noqa: F401 — needed for SQLAlchemy relationship resolution
 
 TARGET_EMAIL = "test@gmail.com"
 
+# Ingredient names match MealDB naming so recipe generation works well
 INGREDIENTS = [
-    ("Milk", "L"), ("Eggs", "pcs"), ("Butter", "g"), ("Flour", "g"),
-    ("Sugar", "g"), ("Salt", "tsp"), ("Olive Oil", "ml"), ("Garlic", "pcs"),
-    ("Onion", "pcs"), ("Tomato", "pcs"), ("Chicken Breast", "g"),
-    ("Ground Beef", "g"), ("Salmon", "g"), ("Broccoli", "g"),
-    ("Spinach", "g"), ("Carrot", "pcs"), ("Potato", "pcs"),
-    ("Rice", "g"), ("Pasta", "g"), ("Cheese", "g"), ("Yogurt", "g"),
-    ("Lemon", "pcs"), ("Apple", "pcs"), ("Banana", "pcs"),
-    ("Soy Sauce", "ml"), ("Honey", "g"), ("Pepper", "tsp"),
-    ("Cumin", "tsp"), ("Paprika", "tsp"), ("Coconut Milk", "ml"),
+    # Proteins
+    ("Chicken", "g"), ("Chicken Breast", "g"), ("Chicken Thighs", "g"),
+    ("Ground Beef", "g"), ("Beef", "g"), ("Bacon", "g"), ("Pork", "g"),
+    ("Salmon", "g"), ("Tuna", "g"), ("Shrimp", "g"), ("Eggs", "pcs"),
+    # Dairy
+    ("Milk", "ml"), ("Butter", "g"), ("Cheese", "g"), ("Parmesan", "g"),
+    ("Mozzarella", "g"), ("Cheddar", "g"), ("Cream", "ml"), ("Yogurt", "g"),
+    # Grains & Starches
+    ("Rice", "g"), ("Pasta", "g"), ("Spaghetti", "g"), ("Penne", "g"),
+    ("Flour", "g"), ("Bread", "pcs"), ("Oats", "g"), ("Noodles", "g"),
+    # Vegetables
+    ("Garlic", "pcs"), ("Onion", "pcs"), ("Tomato", "pcs"), ("Potato", "pcs"),
+    ("Carrot", "pcs"), ("Broccoli", "g"), ("Spinach", "g"), ("Celery", "pcs"),
+    ("Bell Pepper", "pcs"), ("Zucchini", "pcs"), ("Mushrooms", "g"),
+    ("Corn", "pcs"), ("Peas", "g"), ("Leek", "pcs"), ("Aubergine", "pcs"),
+    ("Sweet Potato", "pcs"), ("Cucumber", "pcs"), ("Lettuce", "g"),
+    ("Asparagus", "g"), ("Cabbage", "g"), ("Kale", "g"), ("Courgette", "pcs"),
+    ("Spring Onion", "pcs"), ("Red Pepper", "pcs"), ("Green Pepper", "pcs"),
+    # Fruits
+    ("Lemon", "pcs"), ("Lime", "pcs"), ("Apple", "pcs"), ("Banana", "pcs"),
+    ("Tomatoes", "pcs"), ("Cherry Tomatoes", "g"), ("Avocado", "pcs"),
+    # Pantry / Condiments
+    ("Olive Oil", "ml"), ("Vegetable Oil", "ml"), ("Soy Sauce", "ml"),
+    ("Honey", "g"), ("Vinegar", "ml"), ("Tomato Paste", "g"),
+    ("Tomato Sauce", "ml"), ("Coconut Milk", "ml"), ("Chicken Stock", "ml"),
+    ("Beef Stock", "ml"), ("Vegetable Stock", "ml"), ("White Wine", "ml"),
+    ("Red Wine", "ml"), ("Worcestershire Sauce", "ml"), ("Fish Sauce", "ml"),
+    # Spices & Herbs
+    ("Salt", "tsp"), ("Pepper", "tsp"), ("Paprika", "tsp"), ("Cumin", "tsp"),
+    ("Coriander", "tsp"), ("Thyme", "tsp"), ("Rosemary", "tsp"),
+    ("Oregano", "tsp"), ("Basil", "tsp"), ("Bay Leaves", "pcs"),
+    ("Ginger", "g"), ("Turmeric", "tsp"), ("Chilli Flakes", "tsp"),
+    ("Garlic Powder", "tsp"), ("Onion Powder", "tsp"), ("Cinnamon", "tsp"),
+    # Legumes & Canned
+    ("Chickpeas", "g"), ("Black Beans", "g"), ("Kidney Beans", "g"),
+    ("Lentils", "g"), ("Cannellini Beans", "g"),
+    # Baking
+    ("Sugar", "g"), ("Brown Sugar", "g"), ("Baking Powder", "tsp"),
+    ("Vanilla Extract", "ml"), ("Cocoa Powder", "g"), ("Chocolate", "g"),
 ]
 
-MOOD_STATUSES = ["Happy", "Sad", "Excited", "Tired", "Hungry"]
+MOOD_STATUSES = ["Happy", "Excited", "Content"]
 
 
-def random_date(days_offset_min: int, days_offset_max: int) -> datetime:
-    offset = random.randint(days_offset_min, days_offset_max)
-    return datetime.utcnow() + timedelta(days=offset)
+def random_date(days_min: int, days_max: int) -> datetime:
+    return datetime.utcnow() + timedelta(days=random.randint(days_min, days_max))
 
 
 async def seed_for_user():
@@ -46,10 +76,8 @@ async def seed_for_user():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
-        # Look up the user (outside a transaction — read-only)
         result = await session.execute(select(User).where(User.email == TARGET_EMAIL))
         user = result.scalar_one_or_none()
-
         if user is None:
             print(f"No user found with email: {TARGET_EMAIL}")
             await engine.dispose()
@@ -57,12 +85,9 @@ async def seed_for_user():
 
         print(f"Found user: {user.username} ({user.user_id})")
 
-        pet_result = await session.execute(
-            select(DigitalPet).where(DigitalPet.user_id == user.user_id)
-        )
+        pet_result = await session.execute(select(DigitalPet).where(DigitalPet.user_id == user.user_id))
         existing_pet = pet_result.scalar_one_or_none()
 
-        # Build all objects first, then commit in one transaction
         to_add = []
 
         if existing_pet is None:
@@ -73,66 +98,78 @@ async def seed_for_user():
                 mood_status=random.choice(MOOD_STATUSES),
                 appearance_level=random.randint(1, 5),
             ))
-            print("Will create pet")
+            print("Created pet")
         else:
             print("Pet already exists — skipping")
 
-        ingredients = random.sample(INGREDIENTS, 10)
         batches = []
-        for name, unit in ingredients:
-            status = random.choices(
-                [BatchStatus.PANTRY, BatchStatus.CONSUMED, BatchStatus.EXPIRED, BatchStatus.DISCARDED],
-                weights=[50, 25, 15, 10],
-            )[0]
-            if status == BatchStatus.PANTRY:
-                expiry = random_date(1, 30)
-            elif status == BatchStatus.EXPIRED:
-                expiry = random_date(-30, -1)
-            else:
-                expiry = random_date(-60, 30)
 
+        # ~30 items expiring in 1-3 days (for testing expiry-priority feature)
+        expiring_pool = random.sample(INGREDIENTS, min(30, len(INGREDIENTS)))
+        for name, unit in expiring_pool:
+            batches.append(IngredientBatch(
+                batch_id=uuid.uuid4(),
+                user_id=user.user_id,
+                item_name=name,
+                quantity=round(random.uniform(0.5, 3.0), 2),
+                unit=unit,
+                upload_date=random_date(-10, -1),
+                expiry_date=random_date(1, 3),
+                status=BatchStatus.PANTRY,
+                estimated_cost=round(random.uniform(1.0, 15.0), 2),
+            ))
+
+        # ~120 normal pantry items (expiry 4-30 days)
+        normal_pool = INGREDIENTS * 3  # repeat so we can pick 120+
+        random.shuffle(normal_pool)
+        for name, unit in normal_pool[:120]:
             batches.append(IngredientBatch(
                 batch_id=uuid.uuid4(),
                 user_id=user.user_id,
                 item_name=name,
                 quantity=round(random.uniform(0.1, 5.0), 2),
                 unit=unit,
-                upload_date=random_date(-30, 0),
-                expiry_date=expiry,
+                upload_date=random_date(-20, -1),
+                expiry_date=random_date(4, 30),
+                status=BatchStatus.PANTRY,
+                estimated_cost=round(random.uniform(0.5, 20.0), 2),
+            ))
+
+        # ~50 historical (consumed / expired / discarded)
+        hist_pool = random.sample(INGREDIENTS, min(50, len(INGREDIENTS)))
+        for name, unit in hist_pool:
+            status = random.choices(
+                [BatchStatus.CONSUMED, BatchStatus.EXPIRED, BatchStatus.DISCARDED],
+                weights=[60, 25, 15],
+            )[0]
+            batches.append(IngredientBatch(
+                batch_id=uuid.uuid4(),
+                user_id=user.user_id,
+                item_name=name,
+                quantity=round(random.uniform(0.1, 5.0), 2),
+                unit=unit,
+                upload_date=random_date(-60, -10),
+                expiry_date=random_date(-30, -1),
                 status=status,
                 estimated_cost=round(random.uniform(0.5, 20.0), 2),
             ))
-        to_add.extend(batches)
 
-        logs = []
-        if user.subscription_tier == SubscriptionTier.PREMIUM:
-            for _ in range(random.randint(1, 3)):
-                logs.append(SubscriptionLog(
-                    transaction_id=uuid.uuid4(),
-                    user_id=user.user_id,
-                    payment_date=random_date(-180, 0),
-                    amount=round(random.choice([4.99, 9.99, 19.99]), 2),
-                    status=random.choices(
-                        [PaymentStatus.SUCCESS, PaymentStatus.FAILED, PaymentStatus.REFUNDED],
-                        weights=[85, 10, 5],
-                    )[0],
-                ))
-            to_add.extend(logs)
-        else:
-            print("User is FREE tier — skipping subscription logs")
+        to_add.extend(batches)
 
         user.total_co2_saved = round(random.uniform(5, 50), 4)
         user.total_money_saved = round(random.uniform(10, 200), 2)
-        user.recipes_generated_today = random.randint(0, 3)
+        user.recipes_generated_today = 0
 
         session.add_all(to_add)
         session.add(user)
         await session.commit()
 
-        print(f"Added {len(batches)} ingredient batches")
-        if logs:
-            print(f"Added {len(logs)} subscription log entries")
-        print(f"Updated stats: co2_saved={user.total_co2_saved}, money_saved={user.total_money_saved}")
+        pantry_count = sum(1 for b in batches if b.status == BatchStatus.PANTRY)
+        expiring_count = sum(1 for b in batches if b.status == BatchStatus.PANTRY and
+                             b.expiry_date <= datetime.utcnow() + timedelta(days=3))
+        print(f"Added {len(batches)} total batches")
+        print(f"  · {pantry_count} in pantry ({expiring_count} expiring in ≤3 days)")
+        print(f"  · {len(batches) - pantry_count} historical (consumed/expired/discarded)")
 
     await engine.dispose()
     print("Done.")
