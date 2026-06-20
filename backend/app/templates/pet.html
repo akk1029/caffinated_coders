@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}My Pet · PantryPet{% endblock %}
+
+{% block content %}
+<div class="pet-card">
+  <div id="pet-emoji" class="pet-emoji-big">🥚</div>
+  <p id="pet-stage" class="pet-stage">Egg · Level 1</p>
+  <p id="pet-mood" class="pet-mood">Loading…</p>
+  <div class="hp-track">
+    <div id="hp-fill" class="hp-fill" style="width:100%;background:#4caf50"></div>
+  </div>
+  <p id="hp-text" class="hp-text">100/100 HP</p>
+  <button id="feed-btn" class="btn btn-primary">Feed (+10 HP)</button>
+</div>
+
+<div class="card mt-16">
+  <p class="section-title" style="margin-bottom:10px">How to level up</p>
+  <ul style="padding-left:18px;color:var(--muted);font-size:13px;line-height:2.2">
+    <li>Mark ingredients as <strong>Used</strong> before they expire (+5 HP)</li>
+    <li>Feed your pet daily (+10 HP)</li>
+    <li>Reach 100 HP to advance to the next appearance level</li>
+    <li>Discarding or letting food expire costs HP</li>
+    <li>Premium users unlock exclusive pet skins</li>
+  </ul>
+</div>
+
+<div class="card">
+  <p class="section-title" style="margin-bottom:10px">Evolution Stages</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+    <span title="Lv 1">🥚</span><span title="Lv 2">🐣</span><span title="Lv 3">🐥</span>
+    <span title="Lv 4">🐦</span><span title="Lv 5">🦜</span><span title="Lv 6">🦅</span>
+    <span title="Lv 7">🦁</span><span title="Lv 8">🐉</span><span title="Lv 9">🦄</span>
+    <span title="Lv 10">⭐</span>
+  </div>
+</div>
+{% endblock %}

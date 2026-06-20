@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Recipes · PantryPet{% endblock %}
+
+{% block content %}
+<h2 class="section-title" style="margin-bottom:4px">Recipe Ideas</h2>
+<p class="text-muted" style="margin-bottom:16px">Based on your pantry — items expiring soonest are prioritised.</p>
+
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+  <span class="badge badge-free" id="usage-text">0/3 free today</span>
+  <button id="gen-btn" class="btn btn-primary">Generate Recipes</button>
+</div>
+
+<div id="limit-alert" class="alert alert-warning hidden">
+  Daily limit reached. <a href="/premium" style="color:var(--orange);font-weight:700">Upgrade to Premium</a> for unlimited generations.
+</div>
+
+<p id="recipe-err" class="error-msg hidden" style="margin-bottom:12px"></p>
+
+<div id="recipe-empty" class="empty-state">
+  Hit "Generate Recipes" to get ideas from your current pantry.
+</div>
+
+<div id="recipe-grid" class="recipe-grid"></div>
+{% endblock %}
