@@ -159,6 +159,34 @@ function _showCombo(wrap, n) {
   setTimeout(() => el.remove(), 900);
 }
 
+const _IDLE_TWITCHES = ['pet-tw-wiggle','pet-tw-jump','pet-tw-squish','pet-tw-nod','pet-tw-peek','pet-tw-spaz'];
+
+function _clearIdleClasses(el) {
+  el.classList.remove('pet-idle-float', ..._IDLE_TWITCHES);
+}
+
+function startIdleAnimations(el) {
+  _clearIdleClasses(el);
+  el.classList.add('pet-idle-float');
+  el._hasIdle = true;
+
+  function scheduleNext() {
+    el._idleTimer = setTimeout(() => {
+      if (el.classList.contains('pet-bounce')) { scheduleNext(); return; }
+      _clearIdleClasses(el);
+      const tw = _IDLE_TWITCHES[Math.floor(Math.random() * _IDLE_TWITCHES.length)];
+      el.classList.add(tw);
+      el.addEventListener('animationend', () => {
+        el.classList.remove(tw);
+        el.classList.add('pet-idle-float');
+        scheduleNext();
+      }, { once: true });
+    }, 4000 + Math.random() * 7000);
+  }
+
+  scheduleNext();
+}
+
 function bindPetClick(imgEl, petType) {
   imgEl.style.cursor = 'pointer';
   imgEl.addEventListener('click', () => {
@@ -169,11 +197,18 @@ function bindPetClick(imgEl, petType) {
     clearTimeout(_comboTimer);
     _comboTimer = setTimeout(() => { _comboCount = 0; }, 900);
 
+    // Interrupt idle before bounce
+    clearTimeout(imgEl._idleTimer);
+    _clearIdleClasses(imgEl);
+
     // Squish-bounce (restart each click)
     imgEl.classList.remove('pet-bounce');
     void imgEl.offsetWidth; // force reflow so animation restarts
     imgEl.classList.add('pet-bounce');
-    imgEl.addEventListener('animationend', () => imgEl.classList.remove('pet-bounce'), { once: true });
+    imgEl.addEventListener('animationend', () => {
+      imgEl.classList.remove('pet-bounce');
+      if (imgEl._hasIdle) startIdleAnimations(imgEl);
+    }, { once: true });
 
     _spawnRing(wrap);
     _spawnParticles(wrap);
@@ -365,6 +400,7 @@ async function initDashboard() {
       dashPetEl.classList.add('pet-bubble-wrap');
       dashPetEl.appendChild(dImg);
       bindPetClick(dImg, pet.pet_type);
+      startIdleAnimations(dImg);
 
       const moodEl = document.getElementById('dash-pet-mood');
       moodEl.textContent = isChampion
@@ -739,6 +775,7 @@ function renderPet(pet, isChampion = false) {
   if (isChampion) img.style.filter = 'drop-shadow(0 0 18px rgba(255,215,0,0.85))';
   petEl.appendChild(img);
   bindPetClick(img, pet.pet_type);
+  startIdleAnimations(img);
 
   document.getElementById('pet-stage').textContent = type.name;
   const stageNameEl = document.getElementById('pet-stage-name');
