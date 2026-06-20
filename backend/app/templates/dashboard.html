@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · PantryPet{% endblock %}
+
+{% block content %}
+<h2 id="greeting" style="font-size:20px;font-weight:700;margin-bottom:4px">Hello!</h2>
+<p class="text-muted" style="margin-bottom:16px">Here's your PantryPet overview</p>
+
+<div id="expiry-alert" class="alert alert-danger hidden">
+  🚨 <strong>Use these soon:</strong> <span id="expiring-list"></span>
+  &mdash; <a href="/recipes" style="color:var(--red);font-weight:700">Get recipes →</a>
+</div>
+
+<div class="card-grid-2">
+  <div class="stat-card">
+    <p class="stat-label">Pantry Batches</p>
+    <p class="stat-value" id="pantry-count">–</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">Expiring Soon</p>
+    <p class="stat-value" id="expiring-count" style="color:var(--red)">–</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">CO₂ Saved</p>
+    <p class="stat-value" id="co2-val" style="color:var(--green-dk)">–</p>
+    <p class="stat-unit">kg</p>
+  </div>
+  <div class="stat-card">
+    <p class="stat-label">Money Saved</p>
+    <p class="stat-value" id="money-val" style="color:var(--orange)">–</p>
+    <p class="stat-unit">RM</p>
+  </div>
+</div>
+
+<div class="card" style="text-align:center">
+  <div class="section-hdr" style="justify-content:center;margin-bottom:14px">
+    <span class="section-title">Your Pet</span>
+  </div>
+  <div id="dash-pet-emoji" style="font-size:64px;line-height:1.2;margin-bottom:6px">🥚</div>
+  <p id="dash-pet-mood" class="text-muted" style="margin-bottom:10px">Loading…</p>
+  <div class="hp-track" style="max-width:200px;margin:0 auto 6px">
+    <div id="dash-hp-fill" class="hp-fill" style="width:100%;background:#4caf50"></div>
+  </div>
+  <a href="/pet" class="btn btn-primary btn-sm mt-8">Visit Pet →</a>
+</div>
+
+<div class="card">
+  <div class="section-hdr">
+    <span class="section-title">Quick Actions</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <a href="/inventory" class="btn btn-blue btn-full">🧺 Add Ingredients</a>
+    <a href="/recipes"   class="btn btn-primary btn-full">🍳 Find Recipes</a>
+  </div>
+  <p class="text-muted mt-8 text-center">Recipes today: <strong id="recipes-today">–</strong></p>
+</div>
+{% endblock %}

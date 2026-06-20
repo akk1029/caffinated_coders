@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Premium · PantryPet{% endblock %}
+
+{% block content %}
+<h2 class="section-title" style="margin-bottom:4px">Upgrade to Premium</h2>
+<p class="text-muted" style="margin-bottom:20px">Unlock the full PantryPet experience.</p>
+
+<div id="already-premium" class="alert alert-success hidden" style="text-align:center">
+  <p style="font-size:28px">⭐</p>
+  <p style="font-weight:800;font-size:18px">You're a Premium member!</p>
+  <p class="text-muted mt-8">Subscription active until: <strong id="expiry-date">—</strong></p>
+</div>
+
+<div id="upgrade-section">
+  <div class="plans-grid">
+    <div class="plan-card">
+      <p class="plan-title">Free</p>
+      <p class="plan-price">RM 0<span class="plan-period">/mo</span></p>
+      <ul class="plan-features">
+        <li>3 recipe generations/day</li>
+        <li>Full pantry tracking</li>
+        <li>Standard pet stages</li>
+        <li>Ad-supported</li>
+      </ul>
+      <button disabled class="btn btn-outline btn-full" style="cursor:default;opacity:0.5">Current Plan</button>
+    </div>
+    <div class="plan-card featured">
+      <p class="plan-title" style="color:var(--orange)">Premium</p>
+      <p class="plan-price" style="color:var(--orange)">RM 9.99<span class="plan-period">/mo</span></p>
+      <ul class="plan-features">
+        <li>Unlimited recipe generation</li>
+        <li>Advanced pantry insights</li>
+        <li>Exclusive pet skins</li>
+        <li>Ad-free experience</li>
+        <li>Priority CV detection</li>
+      </ul>
+      <button id="subscribe-btn" class="btn btn-orange btn-full">Subscribe Now</button>
+      <p id="pay-err" class="error-msg hidden mt-8"></p>
+      <p class="text-muted text-center mt-8" style="font-size:11px">Secure payment via Stripe · Cancel anytime</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#4caf50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/static/manifest.json">
+  <title>Register · PantryPet</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="auth-wrap">
+  <p class="auth-logo">🌿 PantryPet</p>
+  <p class="auth-tagline">Start reducing food waste today.</p>
+
+  <div class="auth-card">
+    <h2 class="auth-title">Create your account</h2>
+    <form id="register-form">
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input id="username" class="form-input" type="text" placeholder="pantry_chef" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input id="email" class="form-input" type="email" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input id="password" class="form-input" type="password" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
+      </div>
+      <p id="err" class="error-msg hidden"></p>
+      <button id="submit-btn" class="btn btn-primary btn-full mt-8" type="submit">Create Account</button>
+    </form>
+    <p class="auth-footer">Already have an account? <a href="/login" class="auth-link">Sign in</a></p>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

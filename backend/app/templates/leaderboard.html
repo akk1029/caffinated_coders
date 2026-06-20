@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard · PantryPet{% endblock %}
+
+{% block content %}
+<div class="section-hdr">
+  <span class="section-title">🏆 CO₂ Leaderboard</span>
+  <span id="my-rank" class="count-pill"></span>
+</div>
+<p class="text-muted" style="margin-bottom:14px;font-size:13px">Ranked by kilograms of CO₂ saved through reducing food waste.</p>
+
+<div id="lb-list">
+  <div class="loading">Loading…</div>
+</div>
+
+<div class="card mt-16">
+  <p class="section-title" style="margin-bottom:6px">How CO₂ is calculated</p>
+  <p class="text-muted" style="font-size:13px;line-height:1.7">
+    Each ingredient you mark as <strong>Used</strong> counts as food saved from landfill.
+    We estimate 0.25 kg per unit and apply the standard 2.5 kg CO₂ per kg of food waste factor
+    (WRAP / IPCC methodology). Money saved is the estimated retail price of consumed items.
+  </p>
+</div>
+{% endblock %}

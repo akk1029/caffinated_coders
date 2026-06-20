@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Pantry · PantryPet{% endblock %}
+
+{% block content %}
+<div class="section-hdr">
+  <span class="section-title">Scan & Add</span>
+</div>
+
+<div class="scan-grid">
+  <div class="scan-card" onclick="document.getElementById('camera-input').click()">
+    <span class="scan-icon">📷</span>
+    <span id="camera-btn">🥕 Scan Ingredients</span>
+    <span class="text-muted" style="font-size:11px">Take a photo of your food</span>
+  </div>
+  <div class="scan-card" onclick="document.getElementById('receipt-input').click()">
+    <span class="scan-icon">🧾</span>
+    <span id="receipt-btn">🧾 Scan Receipt</span>
+    <span class="text-muted" style="font-size:11px">OCR your grocery receipt</span>
+  </div>
+</div>
+
+<input id="camera-input"  type="file" accept="image/*" capture="environment" style="display:none">
+<input id="receipt-input" type="file" accept="image/*" style="display:none">
+
+<!-- Pending confirmation panel -->
+<div id="confirm-panel" class="confirm-panel hidden">
+  <div class="section-hdr">
+    <span class="section-title">Confirm Items</span>
+    <button id="confirm-btn" class="btn btn-primary btn-sm">Add to Pantry</button>
+  </div>
+  <p class="text-muted" style="font-size:11px;margin-bottom:10px">Edit name, quantity, unit, expiry, and estimated cost (RM) before confirming.</p>
+  <div id="pending-list"></div>
+</div>
+
+<!-- Current pantry -->
+<div class="section-hdr" style="margin-top:8px">
+  <span class="section-title">Current Pantry</span>
+  <span class="count-pill" id="inv-count">0</span>
+</div>
+
+<div id="inv-list">
+  <div class="loading">Loading…</div>
+</div>
+{% endblock %}
