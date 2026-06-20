@@ -316,6 +316,22 @@ async function startAdventure() {
 async function initDashboard() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
+
+  const viewBtn = document.getElementById('view-uploads-btn');
+  if (viewBtn) {
+    viewBtn.addEventListener('click', () => {
+      const gallery = document.getElementById('uploads-gallery');
+      if (gallery.classList.contains('hidden')) {
+        gallery.classList.remove('hidden');
+        viewBtn.textContent = '🙈 Hide My Photos';
+        loadUploads();
+      } else {
+        gallery.classList.add('hidden');
+        viewBtn.textContent = '🖼️ View My Photos';
+      }
+    });
+  }
+
   try {
     const [user, stats, pet, lb] = await Promise.all([
       apiFetch('/auth/me'), apiFetch('/dashboard/stats'),
@@ -363,6 +379,36 @@ async function initDashboard() {
       document.getElementById('premium-banner').classList.remove('hidden');
     }
   } catch (ex) { toast(ex.message, 'error'); }
+}
+
+async function loadUploads() {
+  const gallery = document.getElementById('uploads-gallery');
+  gallery.innerHTML = '<p class="text-muted text-center" style="grid-column:1/-1">Loading…</p>';
+  try {
+    const uploads = await apiFetch('/uploads/');
+    gallery.innerHTML = '';
+    if (!uploads || uploads.length === 0) {
+      gallery.innerHTML = '<p class="text-muted text-center" style="grid-column:1/-1">No photos uploaded yet.</p>';
+      return;
+    }
+    uploads.forEach(u => {
+      const a = document.createElement('a');
+      a.href = u.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.title = u.filename;
+      const img = document.createElement('img');
+      img.src = u.url;
+      img.alt = u.filename;
+      img.loading = 'lazy';
+      img.style.cssText = 'width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid #eee';
+      a.appendChild(img);
+      gallery.appendChild(a);
+    });
+  } catch (ex) {
+    gallery.innerHTML = '';
+    toast(ex.message, 'error');
+  }
 }
 
 // ─── Inventory ───────────────────────────────────────────────────────────────

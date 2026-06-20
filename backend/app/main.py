@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from app.core.config import settings
 from app.routers import auth, inventory, recipes, payments, pet
-from app.routers import receipts, dashboard, leaderboard
+from app.routers import receipts, dashboard, leaderboard, uploads
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -36,6 +36,7 @@ app.include_router(pet.router, prefix="/api")
 app.include_router(receipts.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
+app.include_router(uploads.router, prefix="/api")
 
 # ─── Page routes (serve HTML) ─────────────────────────────────────────────────
 @app.get("/", response_class=RedirectResponse)
