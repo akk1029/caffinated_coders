@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PantryPet">
   <link rel="manifest" href="/static/manifest.json">
+
   <link rel="apple-touch-icon" href="/static/icon-192.png">
   <title>{% block title %}PantryPet{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css">
@@ -39,6 +40,14 @@
 
 <div id="toast-container"></div>
 <script src="/static/app.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+    .then(() => console.log('Service Worker registered successfully'))
+    .catch(err => console.error('Service Worker registration failed:', err)); 
+  }
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
