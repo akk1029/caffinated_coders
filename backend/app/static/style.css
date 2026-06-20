@@ -276,10 +276,63 @@ select.form-input { cursor: pointer; }
   font-size: 11px; color: var(--green); font-weight: 600; margin-top: 2px;
 }
 
+.lb-crown {
+  position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+  width: 56px; height: 56px; object-fit: contain; pointer-events: none;
+}
+
+.lb-pet-img {
+  width: 32px; height: 32px; object-fit: contain; border-radius: 4px;
+}
+
 .lb-rest-hdr {
   font-size: 12px; font-weight: 700; color: var(--muted);
   text-transform: uppercase; letter-spacing: .05em;
   margin-bottom: 8px;
+}
+
+/* ── Pet interaction ── */
+@keyframes pet-jiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  15%       { transform: rotate(-12deg) scale(1.14); }
+  35%       { transform: rotate(12deg) scale(1.12); }
+  55%       { transform: rotate(-8deg) scale(1.08); }
+  75%       { transform: rotate(8deg) scale(1.05); }
+  90%       { transform: rotate(-3deg) scale(1.02); }
+}
+.pet-jiggle { animation: pet-jiggle 0.55s ease forwards; }
+
+.pet-bubble-wrap { position: relative; display: inline-block; }
+
+.pet-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 3px 16px rgba(0,0,0,.18);
+  pointer-events: none;
+  z-index: 20;
+  animation: bubble-in .25s ease forwards;
+}
+.pet-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: #fff;
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(.9); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0)   scale(1); }
 }
 
 .lb-row {

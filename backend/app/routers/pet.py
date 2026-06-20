@@ -19,6 +19,18 @@ async def get_pet(user: User = Depends(get_current_user), db: AsyncSession = Dep
     return pet
 
 
+@router.post("/hatch/", response_model=PetResponse)
+async def hatch_pet(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DigitalPet).where(DigitalPet.user_id == user.user_id))
+    pet = result.scalar_one_or_none()
+    if not pet:
+        raise HTTPException(status_code=404, detail="Pet not found")
+    pet.is_hatched = True
+    await db.commit()
+    await db.refresh(pet)
+    return pet
+
+
 @router.post("/feed/", response_model=PetResponse)
 async def feed_pet(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(DigitalPet).where(DigitalPet.user_id == user.user_id))

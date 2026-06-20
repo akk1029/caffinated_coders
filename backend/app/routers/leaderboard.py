@@ -31,6 +31,8 @@ async def get_leaderboard(
             "total_co2_saved": float(u.total_co2_saved or 0),
             "total_money_saved": float(u.total_money_saved or 0),
             "pet_level": pet.appearance_level if pet else 1,
+            "pet_type": pet.pet_type if pet else "fox",
+            "health_points": pet.health_points if pet else 100,
         })
         if u.user_id == user.user_id:
             user_rank = i

@@ -74,6 +74,10 @@ async def premium_page(request: Request):
 async def leaderboard_page(request: Request):
     return templates.TemplateResponse(request, "leaderboard.html")
 
+@app.get("/hatch", response_class=HTMLResponse)
+async def hatch_page(request: Request):
+    return templates.TemplateResponse(request, "hatch.html")
+
 @app.get("/sw.js")
 async def get_sw():
     return FileResponse(os.path.join(_HERE, "static", "sw.js"), media_type="application/javascript")

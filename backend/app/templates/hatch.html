@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Your Pet Awaits · PantryPet</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { background: #0d1b0f; margin: 0; overflow: hidden; }
+
+    .hatch-screen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; text-align: center;
+      padding: 24px; position: relative;
+    }
+
+    .hatch-stars {
+      position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse at center, #1a3a1a 0%, #0d1b0f 70%);
+    }
+
+    .hatch-title {
+      color: #a5d6a7; font-size: 15px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: 8px; opacity: 0.8;
+    }
+    .hatch-subtitle {
+      color: #81c784; font-size: 22px; font-weight: 800;
+      margin-bottom: 48px;
+    }
+
+    .hatch-egg-wrap { position: relative; display: inline-block; cursor: pointer; }
+
+    .hatch-egg {
+      font-size: 130px; display: block; line-height: 1;
+      filter: drop-shadow(0 0 30px rgba(100,200,100,0.4));
+      transition: filter .3s;
+    }
+    .hatch-egg-wrap:hover .hatch-egg {
+      filter: drop-shadow(0 0 45px rgba(100,200,100,0.7));
+    }
+
+    .hatch-pulse {
+      position: absolute; inset: -20px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(76,175,80,0.15) 0%, transparent 70%);
+      animation: hatch-pulse-anim 2s ease-in-out infinite;
+    }
+
+    @keyframes hatch-pulse-anim {
+      0%,100% { transform: scale(1); opacity: .6; }
+      50%      { transform: scale(1.15); opacity: 1; }
+    }
+
+    @keyframes egg-shake {
+      0%        { transform: rotate(0deg) translateY(0); }
+      8%        { transform: rotate(-18deg) translateY(-4px); }
+      16%       { transform: rotate(18deg) translateY(-8px); }
+      24%       { transform: rotate(-22deg) translateY(-4px); }
+      32%       { transform: rotate(22deg) translateY(-10px); }
+      40%       { transform: rotate(-28deg) translateY(-6px); }
+      48%       { transform: rotate(28deg) translateY(-12px); }
+      56%       { transform: rotate(-22deg) translateY(-8px); }
+      64%       { transform: rotate(22deg) translateY(-6px); }
+      72%       { transform: rotate(-15deg) translateY(-4px); }
+      80%       { transform: rotate(15deg) translateY(-2px); }
+      90%       { transform: rotate(-8deg) translateY(0); }
+      100%      { transform: rotate(0deg) translateY(0); }
+    }
+
+    .hatch-egg-wrap.shaking .hatch-egg {
+      animation: egg-shake .18s ease-in-out infinite;
+      filter: drop-shadow(0 0 60px rgba(255,255,150,0.8));
+    }
+    .hatch-egg-wrap.shaking .hatch-pulse { display: none; }
+
+    .hatch-tap-hint {
+      color: #66bb6a; font-size: 13px; margin-top: 24px;
+      animation: hint-blink 1.5s ease-in-out infinite;
+    }
+    @keyframes hint-blink { 0%,100% { opacity:.5; } 50% { opacity:1; } }
+
+    /* Light burst overlay */
+    .light-burst {
+      position: fixed; inset: 0; z-index: 500;
+      background: white; opacity: 0; pointer-events: none;
+      transition: opacity .25s ease;
+    }
+    .light-burst.flash   { opacity: 1; }
+    .light-burst.fade    { opacity: 0; }
+
+    /* Pet reveal */
+    .hatch-reveal {
+      display: none; flex-direction: column; align-items: center;
+      gap: 12px;
+    }
+    .hatch-reveal.show { display: flex; }
+
+    @keyframes pet-pop {
+      0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+      55%  { transform: scale(1.25) rotate(6deg); opacity: 1; }
+      75%  { transform: scale(0.92) rotate(-3deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .hatch-pet-img {
+      width: 180px; height: 180px; object-fit: contain;
+      filter: drop-shadow(0 0 40px rgba(255,220,50,0.7));
+      animation: pet-pop .7s cubic-bezier(.34,1.56,.64,1) forwards;
+    }
+    .hatch-pet-emoji {
+      font-size: 140px; line-height: 1;
+      filter: drop-shadow(0 0 40px rgba(255,220,50,0.7));
+      animation: pet-pop .7s cubic-bezier(.34,1.56,.64,1) forwards;
+    }
+
+    @keyframes sparkle-in {
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .hatch-pet-name {
+      color: #fff; font-size: 26px; font-weight: 900;
+      text-shadow: 0 0 20px rgba(255,220,50,.8);
+      animation: sparkle-in .5s .5s ease forwards; opacity: 0;
+    }
+    .hatch-pet-desc {
+      color: #a5d6a7; font-size: 13px; max-width: 260px; line-height: 1.6;
+      animation: sparkle-in .5s .7s ease forwards; opacity: 0;
+    }
+    .hatch-start-btn {
+      margin-top: 8px;
+      animation: sparkle-in .5s .9s ease forwards; opacity: 0;
+      background: #4caf50; color: #fff; border: none;
+      border-radius: 12px; padding: 14px 36px;
+      font-size: 16px; font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(76,175,80,.5);
+    }
+    .hatch-start-btn:active { transform: scale(.96); }
+  </style>
+</head>
+<body>
+
+<div class="light-burst" id="light-burst"></div>
+
+<div class="hatch-screen">
+  <div class="hatch-stars"></div>
+
+  <!-- Egg state -->
+  <div id="egg-section">
+    <p class="hatch-title">A wild egg appeared!</p>
+    <p class="hatch-subtitle">Something is inside...</p>
+
+    <div class="hatch-egg-wrap" id="egg-wrap" onclick="startHatch()">
+      <div class="hatch-pulse"></div>
+      <span class="hatch-egg">🥚</span>
+    </div>
+
+    <p class="hatch-tap-hint">Tap the egg to hatch it</p>
+  </div>
+
+  <!-- Reveal state -->
+  <div class="hatch-reveal" id="reveal-section">
+    <div id="pet-display"></div>
+    <p class="hatch-pet-name" id="pet-name"></p>
+    <p class="hatch-pet-desc" id="pet-desc"></p>
+    <button class="hatch-start-btn" id="start-btn" onclick="startAdventure()">
+      Start your adventure! →
+    </button>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -3,18 +3,35 @@
 const API = '/api';
 const TOKEN_KEY = 'pp_token';
 
-const PET_STAGES = [
-  { name: 'Egg',      emoji: '🥚' },
-  { name: 'Hatchling',emoji: '🐣' },
-  { name: 'Chick',    emoji: '🐥' },
-  { name: 'Fledgling',emoji: '🐦' },
-  { name: 'Parrot',   emoji: '🦜' },
-  { name: 'Hawk',     emoji: '🦅' },
-  { name: 'Lion',     emoji: '🦁' },
-  { name: 'Dragon',   emoji: '🐉' },
-  { name: 'Phoenix',  emoji: '🦄' },
-  { name: 'Legend',   emoji: '⭐' },
-];
+// Stage 1–4 mapped from HP. Index 0 = stage 1.
+const STAGE_NAMES = ['Forgotten', 'Struggling', 'Happy', 'Thriving'];
+
+const PET_QUIPS = {
+  fox:    ['yip yip!', 'heehee!', 'sniff sniff~', '*wags tail*', 'ooh shiny!', 'feed me?', 'boop!'],
+  wolf:   ['AWOOOO!', 'grrrr~', '*howls at moon*', 'protect the pack!', 'rawr!', 'aroooo~'],
+  tiger:  ['ROAR!', 'meow?', 'nom nom nom', '*pounces*', 'I am speed', 'grrrr!', 'pat me!'],
+  dragon: ['RAWRR!', '*breathes fire*', 'ancient power!', 'gimme food', 'I burn things~', 'brooooo'],
+  bat:    ['eeek!', '*hangs upside down*', 'squeeeeak!', 'night mode on', 'boo!', 'i see u~'],
+};
+
+const PET_TYPES = {
+  fox:    { name: 'Forest Fox',   desc: 'A clever fox attuned to nature. Quick, curious, and full of heart.', emoji: '🦊' },
+  wolf:   { name: 'Nature Wolf',  desc: 'A wild wolf with a leaf crown. Fierce protector of the forest.',    emoji: '🐺' },
+  tiger:  { name: 'Royal Tiger',  desc: 'A legendary tiger with ancient power. Born to lead.',               emoji: '🐯' },
+  dragon: { name: 'Earth Dragon', desc: 'An ancient dragon of the deep woods. Rare and powerful.',           emoji: '🐉' },
+  bat:    { name: 'Shadow Bat',   desc: 'A mystic bat of the night forest. Silent and swift.',               emoji: '🦇' },
+};
+
+function petStage(hp) {
+  if (hp >= 75) return 4;
+  if (hp >= 50) return 3;
+  if (hp >= 25) return 2;
+  return 1;
+}
+
+function petImage(type, hp) {
+  return `/static/pets/${type || 'fox'}-${petStage(hp ?? 100)}.png`;
+}
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 const getToken = () => localStorage.getItem(TOKEN_KEY);
@@ -67,7 +84,31 @@ function expiryColor(days) { return (days <= 3) ? '#f44336' : (days <= 7) ? '#ff
 function daysLeft(expiry) { return Math.ceil((new Date(expiry) - Date.now()) / 86400000); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function isoDate(d) { return d.toISOString().split('T')[0]; }
-function petEmoji(level) { return (PET_STAGES[Math.min(level - 1, PET_STAGES.length - 1)] || PET_STAGES[0]).emoji; }
+function petEmoji(type) { return (PET_TYPES[type] || PET_TYPES.fox).emoji; }
+function petStageName(hp) { return STAGE_NAMES[petStage(hp) - 1]; }
+
+function showPetBubble(anchorEl, petType) {
+  const quips = PET_QUIPS[petType] || PET_QUIPS.fox;
+  const text = quips[Math.floor(Math.random() * quips.length)];
+  const wrap = anchorEl.closest('.pet-bubble-wrap') || anchorEl.parentElement;
+  const old = wrap.querySelector('.pet-bubble');
+  if (old) old.remove();
+  const bubble = document.createElement('div');
+  bubble.className = 'pet-bubble';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  setTimeout(() => bubble.remove(), 2000);
+}
+
+function bindPetClick(imgEl, petType) {
+  imgEl.style.cursor = 'pointer';
+  imgEl.addEventListener('click', () => {
+    if (imgEl.classList.contains('pet-jiggle')) return;
+    imgEl.classList.add('pet-jiggle');
+    imgEl.addEventListener('animationend', () => imgEl.classList.remove('pet-jiggle'), { once: true });
+    showPetBubble(imgEl, petType);
+  });
+}
 
 function setNav() {
   const page = window.location.pathname.replace('/', '') || 'dashboard';
@@ -84,8 +125,17 @@ async function setupHeader() {
 }
 
 // ─── Login ───────────────────────────────────────────────────────────────────
+async function afterLogin() {
+  try {
+    const pet = await apiFetch('/pet/');
+    window.location.href = pet.is_hatched ? '/dashboard' : '/hatch';
+  } catch {
+    window.location.href = '/dashboard';
+  }
+}
+
 function initLogin() {
-  if (getToken()) { window.location.href = '/dashboard'; return; }
+  if (getToken()) { afterLogin(); return; }
   if (new URLSearchParams(location.search).get('registered')) {
     document.getElementById('success-msg')?.classList.remove('hidden');
   }
@@ -95,7 +145,7 @@ function initLogin() {
     try {
       const d = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value }) });
       saveToken(d.access_token);
-      window.location.href = '/dashboard';
+      await afterLogin();
     } catch (ex) { setErr('err', ex.message); }
     finally { setBtn('submit-btn', false, 'Sign In'); }
   });
@@ -108,11 +158,85 @@ function initRegister() {
     e.preventDefault(); clearErr('err');
     setBtn('submit-btn', true, 'Create Account');
     try {
-      await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify({ username: document.getElementById('username').value, email: document.getElementById('email').value, password: document.getElementById('password').value }) });
-      window.location.href = '/login?registered=1';
+      const { username, email, password } = {
+        username: document.getElementById('username').value,
+        email:    document.getElementById('email').value,
+        password: document.getElementById('password').value,
+      };
+      await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) });
+      // Auto-login then go to hatch
+      const d = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+      saveToken(d.access_token);
+      window.location.href = '/hatch';
     } catch (ex) { setErr('err', ex.message); }
     finally { setBtn('submit-btn', false, 'Create Account'); }
   });
+}
+
+// ─── Hatch ───────────────────────────────────────────────────────────────────
+async function initHatch() {
+  if (!requireAuth()) return;
+  try {
+    const pet = await apiFetch('/pet/');
+    if (pet.is_hatched) { window.location.href = '/dashboard'; return; }
+  } catch { window.location.href = '/dashboard'; return; }
+}
+
+let _hatchPet = null;
+
+async function startHatch() {
+  const wrap = document.getElementById('egg-wrap');
+  if (wrap.classList.contains('shaking')) return;
+  wrap.classList.add('shaking');
+
+  // Fetch pet type while egg shakes
+  try { _hatchPet = await apiFetch('/pet/'); } catch {}
+
+  // Shake for 2.2s then flash
+  await new Promise(r => setTimeout(r, 2200));
+
+  const burst = document.getElementById('light-burst');
+  burst.classList.add('flash');
+  await new Promise(r => setTimeout(r, 350));
+
+  // Show pet behind the flash
+  revealPet(_hatchPet);
+  await new Promise(r => setTimeout(r, 300));
+  burst.classList.remove('flash');
+}
+
+function revealPet(pet) {
+  document.getElementById('egg-section').style.display = 'none';
+  document.getElementById('reveal-section').classList.add('show');
+
+  const type = (pet && PET_TYPES[pet.pet_type]) || PET_TYPES.fox;
+  const petType = (pet && pet.pet_type) || 'fox';
+  const display = document.getElementById('pet-display');
+  display.innerHTML = '';
+
+  const img = document.createElement('img');
+  img.className = 'hatch-pet-img';
+  img.alt = type.name;
+  img.onerror = () => {
+    const fallback = document.createElement('div');
+    fallback.className = 'hatch-pet-emoji';
+    fallback.textContent = type.emoji;
+    display.replaceChildren(fallback);
+  };
+  img.src = `/static/pets/${petType}-3.png`;
+  display.appendChild(img);
+
+  document.getElementById('pet-name').textContent = type.name;
+  document.getElementById('pet-desc').textContent = type.desc;
+}
+
+async function startAdventure() {
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  try {
+    await apiFetch('/pet/hatch/', { method: 'POST' });
+  } catch {}
+  window.location.href = '/dashboard';
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
@@ -132,8 +256,24 @@ async function initDashboard() {
       document.getElementById('expiring-list').textContent = stats.expiring_items.join(', ');
     }
     if (pet) {
-      document.getElementById('dash-pet-emoji').textContent = petEmoji(pet.appearance_level);
-      document.getElementById('dash-pet-mood').textContent = `${pet.mood_status} · Lv.${pet.appearance_level}`;
+      const dashPetEl = document.getElementById('dash-pet-emoji');
+      dashPetEl.innerHTML = '';
+      const dImg = document.createElement('img');
+      dImg.style.cssText = 'width:80px;height:80px;object-fit:contain';
+      dImg.alt = (PET_TYPES[pet.pet_type] || PET_TYPES.fox).name;
+      dImg.onerror = () => {
+        const fb = document.createElement('span');
+        fb.textContent = petEmoji(pet.pet_type);
+        fb.style.fontSize = '64px';
+        dashPetEl.replaceChildren(fb);
+      };
+      dImg.src = petImage(pet.pet_type, pet.health_points);
+      dashPetEl.classList.add('pet-bubble-wrap');
+      dashPetEl.appendChild(dImg);
+      bindPetClick(dImg, pet.pet_type);
+
+      document.getElementById('dash-pet-mood').textContent =
+        `${petStageName(pet.health_points)} · ${(PET_TYPES[pet.pet_type] || PET_TYPES.fox).name}`;
       const fill = document.getElementById('dash-hp-fill');
       fill.style.width = `${pet.health_points}%`;
       fill.style.background = hpColor(pet.health_points);
@@ -434,9 +574,27 @@ async function initPet() {
 }
 
 function renderPet(pet) {
-  const s = PET_STAGES[Math.min(pet.appearance_level - 1, PET_STAGES.length - 1)];
-  document.getElementById('pet-emoji').textContent = s.emoji;
-  document.getElementById('pet-stage').textContent = `${s.name} · Level ${pet.appearance_level}`;
+  const type = PET_TYPES[pet.pet_type] || PET_TYPES.fox;
+  const petEl = document.getElementById('pet-emoji');
+  petEl.innerHTML = '';
+  petEl.classList.add('pet-bubble-wrap');
+
+  const img = document.createElement('img');
+  img.style.cssText = 'width:120px;height:120px;object-fit:contain';
+  img.alt = type.name;
+  img.onerror = () => {
+    const fb = document.createElement('span');
+    fb.textContent = type.emoji;
+    fb.style.fontSize = '100px';
+    petEl.replaceChildren(fb);
+  };
+  img.src = petImage(pet.pet_type, pet.health_points);
+  petEl.appendChild(img);
+  bindPetClick(img, pet.pet_type);
+
+  document.getElementById('pet-stage').textContent = type.name;
+  document.getElementById('pet-stage-name').textContent = petStageName(pet.health_points);
+  document.getElementById('pet-stage-name').style.color = hpColor(pet.health_points);
   document.getElementById('pet-mood').textContent = pet.mood_status;
   document.getElementById('pet-mood').style.color = hpColor(pet.health_points);
   document.getElementById('hp-text').textContent = `${pet.health_points}/100 HP`;
@@ -469,12 +627,6 @@ async function initPremium() {
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
-function petImage(level) {
-  if (level >= 8) return '/static/pets/top-leaderboard.png';
-  if (level >= 5) return '/static/pets/wolf-4.png';
-  return '/static/pets/fox-4.png';
-}
-
 async function initLeaderboard() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
@@ -487,10 +639,14 @@ async function initLeaderboard() {
     // Podium (top 3)
     document.getElementById('lb-podium').innerHTML = top3.map((e, i) => {
       const isMe = e.user_id === me.user_id;
-      const rankClass = `rank-${i + 1}`;
-      return `<div class="lb-podium-card ${rankClass}${isMe ? ' me' : ''}">
+      const isFirst = i === 0;
+      return `<div class="lb-podium-card rank-${i + 1}${isMe ? ' me' : ''}">
         <div class="lb-podium-medal">${MEDALS[i]}</div>
-        <img class="pet-img" src="${petImage(e.pet_level || 1)}" alt="pet">
+        <div style="position:relative;display:inline-block">
+          <img class="pet-img" src="${petImage(e.pet_type, e.health_points)}" alt="pet"
+               onerror="this.style.opacity='0.3'">
+          ${isFirst ? `<img class="lb-crown" src="/static/pets/top-leaderboard.png" alt="crown">` : ''}
+        </div>
         <div class="lb-podium-name">${e.username}${isMe ? ' (you)' : ''}</div>
         <div class="lb-podium-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</div>
       </div>`;
@@ -502,9 +658,11 @@ async function initLeaderboard() {
         `<div class="lb-rest-hdr">The Rest</div>` +
         rest.map((e, i) => {
           const isMe = e.user_id === me.user_id;
+          const type = PET_TYPES[e.pet_type] || PET_TYPES.fox;
           return `<div class="lb-row${isMe ? ' me' : ''}">
             <span class="lb-rank">#${i + 4}</span>
-            <span class="lb-pet">${petEmoji(e.pet_level || 1)}</span>
+            <img class="lb-pet-img" src="${petImage(e.pet_type, e.health_points)}" alt="pet"
+                 onerror="this.outerHTML='<span class=lb-pet>${type.emoji}</span>'">
             <span class="lb-name">${e.username}${isMe ? ' (you)' : ''}</span>
             <span class="lb-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</span>
           </div>`;
@@ -525,6 +683,7 @@ const ROUTES = {
   '/pet':         initPet,
   '/premium':     initPremium,
   '/leaderboard': initLeaderboard,
+  '/hatch':       initHatch,
 };
 
 document.addEventListener('DOMContentLoaded', () => {

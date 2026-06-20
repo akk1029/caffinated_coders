@@ -7,5 +7,7 @@ class PetResponse(BaseModel):
     health_points: int
     mood_status: str
     appearance_level: int
+    pet_type: str
+    is_hatched: bool
 
     model_config = {"from_attributes": True}
