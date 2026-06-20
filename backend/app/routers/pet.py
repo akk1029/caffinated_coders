@@ -39,9 +39,22 @@ async def feed_pet(user: User = Depends(get_current_user), db: AsyncSession = De
         raise HTTPException(status_code=404, detail="Pet not found")
 
     pet.health_points = min(100, pet.health_points + 10)
-    if pet.health_points >= 100 and pet.appearance_level < 10:
-        pet.appearance_level += 1
-    pet.mood_status = "Ecstatic" if pet.health_points == 100 else "Happy" if pet.health_points >= 70 else "Content"
+    pet.mood_status = "Thriving" if pet.health_points >= 75 else "Happy" if pet.health_points >= 50 else "Struggling" if pet.health_points >= 25 else "Forgotten"
+
+    await db.commit()
+    await db.refresh(pet)
+    return pet
+
+
+@router.post("/poke/", response_model=PetResponse)
+async def poke_pet(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DigitalPet).where(DigitalPet.user_id == user.user_id))
+    pet = result.scalar_one_or_none()
+    if not pet:
+        raise HTTPException(status_code=404, detail="Pet not found")
+
+    pet.health_points = max(0, pet.health_points - 10)
+    pet.mood_status = "Thriving" if pet.health_points >= 75 else "Happy" if pet.health_points >= 50 else "Struggling" if pet.health_points >= 25 else "Forgotten"
 
     await db.commit()
     await db.refresh(pet)

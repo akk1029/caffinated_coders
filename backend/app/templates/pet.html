@@ -5,13 +5,15 @@
 <div class="pet-card">
   <div id="pet-emoji" class="pet-emoji-big" style="position:relative"></div>
   <p id="pet-stage" class="pet-stage">Loading…</p>
-  <p id="pet-stage-name" style="font-size:18px;font-weight:800;margin:2px 0 4px;letter-spacing:.02em">—</p>
-  <p id="pet-mood" class="pet-mood">Loading…</p>
+  <p id="pet-stage-name" style="font-size:18px;font-weight:800;margin:2px 0 12px;letter-spacing:.02em">—</p>
   <div class="hp-track">
     <div id="hp-fill" class="hp-fill" style="width:100%;background:#4caf50"></div>
   </div>
   <p id="hp-text" class="hp-text">100/100 HP</p>
-  <button id="feed-btn" class="btn btn-primary">Feed (+10 HP)</button>
+  <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
+    <button id="feed-btn" class="btn btn-primary">Feed (+10 HP)</button>
+    <button id="poke-btn" class="btn btn-outline" style="font-size:12px;color:var(--muted)">Demo −10 HP</button>
+  </div>
 </div>
 
 <div class="card mt-16">

@@ -29,8 +29,9 @@ function petStage(hp) {
   return 1;
 }
 
-function petImage(type, hp) {
-  return `/static/pets/${type || 'fox'}-${petStage(hp ?? 100)}.png`;
+function petImage(type, hp, champion = false) {
+  const stage = champion ? 5 : petStage(hp ?? 100);
+  return `/static/pets/${type || 'fox'}-${stage}.png`;
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -87,25 +88,97 @@ function isoDate(d) { return d.toISOString().split('T')[0]; }
 function petEmoji(type) { return (PET_TYPES[type] || PET_TYPES.fox).emoji; }
 function petStageName(hp) { return STAGE_NAMES[petStage(hp) - 1]; }
 
+const FLOAT_EMOJIS   = ['❤️','✨','⭐','💫','🌟','💕','🎉','💖','🔥','🌈'];
+const PARTICLE_COLORS = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#c77dff','#ff9f43'];
+
+let _comboCount = 0;
+let _comboTimer = null;
+
+function _petWrap(el) { return el.closest('.pet-bubble-wrap') || el.parentElement; }
+
 function showPetBubble(anchorEl, petType) {
   const quips = PET_QUIPS[petType] || PET_QUIPS.fox;
-  const text = quips[Math.floor(Math.random() * quips.length)];
-  const wrap = anchorEl.closest('.pet-bubble-wrap') || anchorEl.parentElement;
+  const wrap = _petWrap(anchorEl);
   const old = wrap.querySelector('.pet-bubble');
-  if (old) old.remove();
+  if (old) { old.remove(); }
   const bubble = document.createElement('div');
   bubble.className = 'pet-bubble';
-  bubble.textContent = text;
+  bubble.textContent = quips[Math.floor(Math.random() * quips.length)];
   wrap.appendChild(bubble);
-  setTimeout(() => bubble.remove(), 2000);
+  setTimeout(() => bubble.remove(), 1800);
+}
+
+function _spawnParticles(wrap) {
+  const n = 12;
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'pet-particle';
+    const angle = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+    const dist  = 45 + Math.random() * 45;
+    p.style.setProperty('--px', `${Math.cos(angle) * dist}px`);
+    p.style.setProperty('--py', `${Math.sin(angle) * dist}px`);
+    p.style.background = PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)];
+    p.style.animationDelay = `${Math.random() * 80}ms`;
+    wrap.appendChild(p);
+    setTimeout(() => p.remove(), 750);
+  }
+}
+
+function _spawnFloats(wrap, combo) {
+  const count = Math.min(2 + combo, 6);
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'pet-float-emoji';
+    el.textContent = FLOAT_EMOJIS[Math.floor(Math.random() * FLOAT_EMOJIS.length)];
+    el.style.left   = `${15 + Math.random() * 70}%`;
+    el.style.top    = `${20 + Math.random() * 40}%`;
+    el.style.animationDelay = `${i * 90}ms`;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 1100 + i * 90);
+  }
+}
+
+function _spawnRing(wrap) {
+  const r = document.createElement('div');
+  r.className = 'pet-ring';
+  wrap.appendChild(r);
+  setTimeout(() => r.remove(), 550);
+}
+
+function _showCombo(wrap, n) {
+  const old = wrap.querySelector('.pet-combo');
+  if (old) old.remove();
+  if (n < 2) return;
+  const el = document.createElement('div');
+  el.className = 'pet-combo';
+  const labels = { 2:'x2!', 3:'x3! 🔥', 4:'x4! 💥', 5:'x5! ⚡' };
+  el.textContent = labels[Math.min(n, 5)] || `x${n}! 🌟`;
+  if (n >= 4) el.style.color = '#ff3d00';
+  if (n >= 5) el.style.fontSize = '22px';
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 900);
 }
 
 function bindPetClick(imgEl, petType) {
   imgEl.style.cursor = 'pointer';
   imgEl.addEventListener('click', () => {
-    if (imgEl.classList.contains('pet-jiggle')) return;
-    imgEl.classList.add('pet-jiggle');
-    imgEl.addEventListener('animationend', () => imgEl.classList.remove('pet-jiggle'), { once: true });
+    const wrap = _petWrap(imgEl);
+
+    // Combo
+    _comboCount++;
+    clearTimeout(_comboTimer);
+    _comboTimer = setTimeout(() => { _comboCount = 0; }, 900);
+
+    // Squish-bounce (restart each click)
+    imgEl.classList.remove('pet-bounce');
+    void imgEl.offsetWidth; // force reflow so animation restarts
+    imgEl.classList.add('pet-bounce');
+    imgEl.addEventListener('animationend', () => imgEl.classList.remove('pet-bounce'), { once: true });
+
+    _spawnRing(wrap);
+    _spawnParticles(wrap);
+    _spawnFloats(wrap, _comboCount);
+    _showCombo(wrap, _comboCount);
     showPetBubble(imgEl, petType);
   });
 }
@@ -244,7 +317,12 @@ async function initDashboard() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
   try {
-    const [user, stats, pet] = await Promise.all([apiFetch('/auth/me'), apiFetch('/dashboard/stats'), apiFetch('/pet/')]);
+    const [user, stats, pet, lb] = await Promise.all([
+      apiFetch('/auth/me'), apiFetch('/dashboard/stats'),
+      apiFetch('/pet/'),    apiFetch('/leaderboard/'),
+    ]);
+    const isChampion = lb?.user_rank === 1;
+
     document.getElementById('greeting').textContent = `Hello, ${user.username}!`;
     document.getElementById('pantry-count').textContent = stats.pantry_count;
     document.getElementById('expiring-count').textContent = stats.expiring_soon_count;
@@ -267,13 +345,16 @@ async function initDashboard() {
         fb.style.fontSize = '64px';
         dashPetEl.replaceChildren(fb);
       };
-      dImg.src = petImage(pet.pet_type, pet.health_points);
+      dImg.src = petImage(pet.pet_type, pet.health_points, isChampion);
       dashPetEl.classList.add('pet-bubble-wrap');
       dashPetEl.appendChild(dImg);
       bindPetClick(dImg, pet.pet_type);
 
-      document.getElementById('dash-pet-mood').textContent =
-        `${petStageName(pet.health_points)} · ${(PET_TYPES[pet.pet_type] || PET_TYPES.fox).name}`;
+      const moodEl = document.getElementById('dash-pet-mood');
+      moodEl.textContent = isChampion
+        ? `👑 Champion · ${(PET_TYPES[pet.pet_type] || PET_TYPES.fox).name}`
+        : `${petStageName(pet.health_points)} · ${(PET_TYPES[pet.pet_type] || PET_TYPES.fox).name}`;
+      if (isChampion) moodEl.style.color = '#f59e0b';
       const fill = document.getElementById('dash-hp-fill');
       fill.style.width = `${pet.health_points}%`;
       fill.style.background = hpColor(pet.health_points);
@@ -563,17 +644,25 @@ async function initPet() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
   try {
-    renderPet(await apiFetch('/pet/'));
+    const [pet, lb] = await Promise.all([apiFetch('/pet/'), apiFetch('/leaderboard/')]);
+    const isChampion = lb?.user_rank === 1;
+    renderPet(pet, isChampion);
     document.getElementById('feed-btn').addEventListener('click', async () => {
       setBtn('feed-btn', true, 'Feed');
-      try { renderPet(await apiFetch('/pet/feed/', { method: 'POST' })); toast('+10 HP!', 'success'); }
+      try { renderPet(await apiFetch('/pet/feed/', { method: 'POST' }), isChampion); toast('+10 HP!', 'success'); }
       catch (ex) { toast(ex.message, 'error'); }
       finally { setBtn('feed-btn', false, 'Feed (+10 HP)'); }
+    });
+    document.getElementById('poke-btn').addEventListener('click', async () => {
+      setBtn('poke-btn', true, 'Demo −10 HP');
+      try { renderPet(await apiFetch('/pet/poke/', { method: 'POST' }), isChampion); }
+      catch (ex) { toast(ex.message, 'error'); }
+      finally { setBtn('poke-btn', false, 'Demo −10 HP'); }
     });
   } catch (ex) { toast(ex.message, 'error'); }
 }
 
-function renderPet(pet) {
+function renderPet(pet, isChampion = false) {
   const type = PET_TYPES[pet.pet_type] || PET_TYPES.fox;
   const petEl = document.getElementById('pet-emoji');
   petEl.innerHTML = '';
@@ -588,15 +677,20 @@ function renderPet(pet) {
     fb.style.fontSize = '100px';
     petEl.replaceChildren(fb);
   };
-  img.src = petImage(pet.pet_type, pet.health_points);
+  img.src = petImage(pet.pet_type, pet.health_points, isChampion);
+  if (isChampion) img.style.filter = 'drop-shadow(0 0 18px rgba(255,215,0,0.85))';
   petEl.appendChild(img);
   bindPetClick(img, pet.pet_type);
 
   document.getElementById('pet-stage').textContent = type.name;
-  document.getElementById('pet-stage-name').textContent = petStageName(pet.health_points);
-  document.getElementById('pet-stage-name').style.color = hpColor(pet.health_points);
-  document.getElementById('pet-mood').textContent = pet.mood_status;
-  document.getElementById('pet-mood').style.color = hpColor(pet.health_points);
+  const stageNameEl = document.getElementById('pet-stage-name');
+  if (isChampion) {
+    stageNameEl.textContent = '👑 Champion';
+    stageNameEl.style.color = '#f59e0b';
+  } else {
+    stageNameEl.textContent = petStageName(pet.health_points);
+    stageNameEl.style.color = hpColor(pet.health_points);
+  }
   document.getElementById('hp-text').textContent = `${pet.health_points}/100 HP`;
   const fill = document.getElementById('hp-fill');
   fill.style.width = `${pet.health_points}%`;
@@ -640,13 +734,13 @@ async function initLeaderboard() {
     document.getElementById('lb-podium').innerHTML = top3.map((e, i) => {
       const isMe = e.user_id === me.user_id;
       const isFirst = i === 0;
+      const normalImg = petImage(e.pet_type, e.health_points);
+      const imgSrc = isFirst ? `/static/pets/${e.pet_type || 'fox'}-5.png` : normalImg;
       return `<div class="lb-podium-card rank-${i + 1}${isMe ? ' me' : ''}">
         <div class="lb-podium-medal">${MEDALS[i]}</div>
-        <div style="position:relative;display:inline-block">
-          <img class="pet-img" src="${petImage(e.pet_type, e.health_points)}" alt="pet"
-               onerror="this.style.opacity='0.3'">
-          ${isFirst ? `<img class="lb-crown" src="/static/pets/top-leaderboard.png" alt="crown">` : ''}
-        </div>
+        <img class="pet-img${isFirst ? ' pet-img-champion' : ''}" src="${imgSrc}" alt="pet"
+             onerror="this.onerror=null;this.src='${normalImg}'">
+        ${isFirst ? `<div class="lb-champion-label">👑 Champion</div>` : ''}
         <div class="lb-podium-name">${e.username}${isMe ? ' (you)' : ''}</div>
         <div class="lb-podium-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</div>
       </div>`;
