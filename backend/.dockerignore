@@ -1,0 +1,15 @@
+# Never ship the local virtualenv (huge, Windows-specific) or secrets into the image
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+.git/
+.gitignore
+.pytest_cache/
+*.md
+.vscode/
+.idea/
