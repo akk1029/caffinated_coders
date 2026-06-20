@@ -19,7 +19,7 @@ from app.models.pet import DigitalPet
 from app.models.inventory import IngredientBatch, BatchStatus
 from app.models.subscription import SubscriptionLog, PaymentStatus
 
-TARGET_EMAIL = "aungkoko.work@gmail.com"
+TARGET_EMAIL = "test@gmail.com"
 
 INGREDIENTS = [
     ("Milk", "L"), ("Eggs", "pcs"), ("Butter", "g"), ("Flour", "g"),

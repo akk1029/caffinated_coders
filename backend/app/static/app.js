@@ -138,6 +138,9 @@ async function initDashboard() {
       fill.style.width = `${pet.health_points}%`;
       fill.style.background = hpColor(pet.health_points);
     }
+    if (user.subscription_tier !== 'Premium') {
+      document.getElementById('premium-banner').classList.remove('hidden');
+    }
   } catch (ex) { toast(ex.message, 'error'); }
 }
 
@@ -328,9 +331,9 @@ async function initPremium() {
   }
   document.getElementById('subscribe-btn')?.addEventListener('click', async () => {
     clearErr('pay-err');
-    setBtn('subscribe-btn', true, 'Subscribe Now');
+    setBtn('subscribe-btn', true, 'Activating…');
     try {
-      await apiFetch('/payments/subscribe/', { method: 'POST', body: JSON.stringify({ payment_method_id: 'pm_card_visa' }) });
+      await apiFetch('/payments/demo-subscribe/', { method: 'POST' });
       toast('Premium activated!', 'success');
       setTimeout(() => window.location.reload(), 1500);
     } catch (ex) { setErr('pay-err', ex.message); }
@@ -339,21 +342,48 @@ async function initPremium() {
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
+function petImage(level) {
+  if (level >= 8) return '/static/pets/top-leaderboard.png';
+  if (level >= 5) return '/static/pets/wolf-4.png';
+  return '/static/pets/fox-4.png';
+}
+
 async function initLeaderboard() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
   try {
     const [data, me] = await Promise.all([apiFetch('/leaderboard/'), apiFetch('/auth/me')]);
     const MEDALS = ['🥇','🥈','🥉'];
-    document.getElementById('lb-list').innerHTML = data.rankings.map((e, i) => {
+    const top3 = data.rankings.slice(0, 3);
+    const rest  = data.rankings.slice(3);
+
+    // Podium (top 3)
+    document.getElementById('lb-podium').innerHTML = top3.map((e, i) => {
       const isMe = e.user_id === me.user_id;
-      return `<div class="lb-row${isMe?' me':''}">
-        <span class="lb-rank">${MEDALS[i] || '#'+(i+1)}</span>
-        <span class="lb-pet">${petEmoji(e.pet_level||1)}</span>
-        <span class="lb-name">${e.username}${isMe?' (you)':''}</span>
-        <span class="lb-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</span>
+      const rankClass = `rank-${i + 1}`;
+      return `<div class="lb-podium-card ${rankClass}${isMe ? ' me' : ''}">
+        <div class="lb-podium-medal">${MEDALS[i]}</div>
+        <img class="pet-img" src="${petImage(e.pet_level || 1)}" alt="pet">
+        <div class="lb-podium-name">${e.username}${isMe ? ' (you)' : ''}</div>
+        <div class="lb-podium-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</div>
       </div>`;
     }).join('');
+
+    // Rest of list (#4+)
+    if (rest.length) {
+      document.getElementById('lb-list').innerHTML =
+        `<div class="lb-rest-hdr">The Rest</div>` +
+        rest.map((e, i) => {
+          const isMe = e.user_id === me.user_id;
+          return `<div class="lb-row${isMe ? ' me' : ''}">
+            <span class="lb-rank">#${i + 4}</span>
+            <span class="lb-pet">${petEmoji(e.pet_level || 1)}</span>
+            <span class="lb-name">${e.username}${isMe ? ' (you)' : ''}</span>
+            <span class="lb-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</span>
+          </div>`;
+        }).join('');
+    }
+
     if (data.user_rank) document.getElementById('my-rank').textContent = `Your rank: #${data.user_rank}`;
   } catch (ex) { toast(ex.message, 'error'); }
 }

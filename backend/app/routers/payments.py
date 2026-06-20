@@ -13,6 +13,18 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 
+@router.post("/demo-subscribe/")
+async def demo_subscribe(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user.subscription_tier = SubscriptionTier.PREMIUM
+    user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
+    db.add(SubscriptionLog(user_id=user.user_id, amount=9.99, status=PaymentStatus.SUCCESS))
+    await db.commit()
+    return {"message": "Demo subscription activated", "expires": user.subscription_expiry}
+
+
 @router.post("/subscribe/")
 async def subscribe(
     request: SubscribeRequest,
