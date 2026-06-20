@@ -458,22 +458,20 @@ async function initInventory() {
 
   document.getElementById('camera-input').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file) return;
-    setBtn('camera-btn', true, '🥕 Scan Ingredients');
+    setBtn('camera-btn', true, '📷 Scanning…');
     try {
       const fd = new FormData(); fd.append('file', file);
-      const d = await apiFetch('/inventory/upload/', { method: 'POST', body: fd });
+      const d = await apiFetch('/receipts/scan/', { method: 'POST', body: fd });
       if (d.demo) {
-        toast(`⚠️ Image detection unavailable: ${(d.error || 'not configured').slice(0, 140)}`, 'info');
-        return;
-      } else if (!d.detected_ingredients.length) {
-        toast('No food detected in the photo', 'info');
-        return;
+        toast(`⚠️ Receipt scan unavailable: ${(d.error || 'OCR not configured').slice(0, 140)}`, 'error');
+      } else if (d.count > 0) {
+        toast(`Added ${d.count} item${d.count > 1 ? 's' : ''} from photo · ${d.scans_used}/${d.scans_limit} scans today`, 'success');
+        await loadInventory();
+      } else {
+        toast('No food items found in the photo', 'info');
       }
-      const now = new Date();
-      pending = [...pending, ...d.detected_ingredients.map(x => ({ item_name: x.item_name, quantity: 1, unit: 'pieces', expiry_date: isoDate(addDays(now, x.suggested_shelf_days)), estimated_cost: 2.00 }))];
-      renderPending();
     } catch (ex) { toast(ex.message, 'error'); }
-    finally { setBtn('camera-btn', false, '🥕 Scan Ingredients'); e.target.value = ''; }
+    finally { setBtn('camera-btn', false, 'Capture Receipt'); e.target.value = ''; }
   });
 
   document.getElementById('receipt-input').addEventListener('change', async e => {
