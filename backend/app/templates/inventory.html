@@ -22,6 +22,29 @@
 <input id="camera-input"  type="file" accept="image/*" capture="environment" style="display:none">
 <input id="receipt-input" type="file" accept="image/*" style="display:none">
 
+<!-- Manual add -->
+<div class="card" style="margin-bottom:16px">
+  <div class="section-hdr" style="margin-bottom:10px">
+    <span class="section-title">✏️ Add Ingredient Manually</span>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+    <div style="flex:2;min-width:120px">
+      <label class="form-label">Item</label>
+      <input id="manual-name" class="form-input" placeholder="e.g. Chicken">
+    </div>
+    <div style="width:74px">
+      <label class="form-label">Qty</label>
+      <input id="manual-qty" class="form-input" type="number" value="1" min="0.1" step="0.1">
+    </div>
+    <div style="width:96px">
+      <label class="form-label">Unit</label>
+      <select id="manual-unit" class="form-input"></select>
+    </div>
+    <button id="manual-add-btn" class="btn btn-primary">Add</button>
+  </div>
+  <p class="text-muted" style="font-size:11px;margin-top:8px">Shelf-life expiry and estimated cost are filled in automatically.</p>
+</div>
+
 <!-- Pending confirmation panel -->
 <div id="confirm-panel" class="confirm-panel hidden">
   <div class="section-hdr">

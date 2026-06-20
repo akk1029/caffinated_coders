@@ -26,6 +26,14 @@ class ConfirmInventoryRequest(BaseModel):
     batches: List[BatchConfirm]
 
 
+class AddIngredientRequest(BaseModel):
+    item_name: str
+    quantity: float = 1
+    unit: str = "pieces"
+    expiry_date: Optional[datetime] = None      # auto-computed from shelf life if omitted
+    estimated_cost: Optional[float] = None       # auto-computed from price data if omitted
+
+
 class BatchResponse(BaseModel):
     batch_id: uuid.UUID
     item_name: str

@@ -1,7 +1,7 @@
 import asyncio
 import json
 from collections import defaultdict
-from typing import List
+from typing import List, Optional
 
 import httpx
 
@@ -52,8 +52,16 @@ async def _fetch_meal_detail(client: httpx.AsyncClient, meal_id: str) -> dict | 
         return None
 
 
-async def generate_recipes(ingredients: List[str]) -> List[dict]:
-    cache_key = "mealdb_recipes:" + ",".join(sorted(i.lower() for i in ingredients))
+async def generate_recipes(ingredients: List[str], expiring: Optional[List[str]] = None) -> List[dict]:
+    """Find MealDB recipes from pantry ingredients, prioritising those that use
+    ingredients which are expiring soon."""
+    pantry = {i.lower() for i in ingredients}
+    expiring_set = {e.lower() for e in (expiring or [])}
+
+    cache_key = (
+        "mealdb_recipes:" + ",".join(sorted(pantry))
+        + "|exp:" + ",".join(sorted(expiring_set))
+    )
 
     r = await _redis()
     if r:
@@ -61,8 +69,6 @@ async def generate_recipes(ingredients: List[str]) -> List[dict]:
         if cached:
             await r.aclose()
             return json.loads(cached)
-
-    pantry = {i.lower() for i in ingredients}
 
     async with httpx.AsyncClient(timeout=10) as client:
         # Query TheMealDB for each pantry ingredient in parallel
@@ -72,17 +78,12 @@ async def generate_recipes(ingredients: List[str]) -> List[dict]:
 
         # Score each meal by how many pantry ingredients it appears under
         meal_score: dict[str, int] = defaultdict(int)
-        meal_stub: dict[str, dict] = {}
         for meal_list in searches:
             for meal in meal_list:
-                mid = meal["idMeal"]
-                meal_score[mid] += 1
-                meal_stub[mid] = meal
+                meal_score[meal["idMeal"]] += 1
 
-        # Take top N by score
+        # Take top N by score, then fetch full details in parallel
         top_ids = sorted(meal_score, key=lambda m: meal_score[m], reverse=True)[:TOP_N]
-
-        # Fetch full details in parallel
         details = await asyncio.gather(
             *[_fetch_meal_detail(client, mid) for mid in top_ids]
         )
@@ -92,8 +93,8 @@ async def generate_recipes(ingredients: List[str]) -> List[dict]:
         if detail is None:
             continue
         meal_ings = _meal_ingredients(detail)
-        used = len(pantry & meal_ings)
-        missing = len(meal_ings - pantry)
+        used = sorted(pantry & meal_ings)
+        expiring_used = sorted(meal_ings & expiring_set)
         result.append({
             "id": detail["idMeal"],
             "title": detail["strMeal"],
@@ -103,15 +104,50 @@ async def generate_recipes(ingredients: List[str]) -> List[dict]:
             "instructions": detail.get("strInstructions", ""),
             "source": detail.get("strSource", ""),
             "youtube": detail.get("strYoutube", ""),
-            "usedIngredientCount": used,
-            "missedIngredientCount": missing,
+            "usedIngredients": used,            # pantry items this recipe uses (for "mark cooked")
+            "usedIngredientCount": len(used),
+            "missedIngredientCount": len(meal_ings - pantry),
+            "expiringUsedCount": len(expiring_used),
         })
 
-    # Sort by most pantry ingredients used
-    result.sort(key=lambda x: x["usedIngredientCount"], reverse=True)
+    # Prioritise recipes that use expiring items, then overall pantry coverage
+    result.sort(key=lambda x: (x["expiringUsedCount"], x["usedIngredientCount"]), reverse=True)
 
     if r:
         await r.setex(cache_key, 86400, json.dumps(result))
         await r.aclose()
 
     return result
+
+
+# ─── Saved recipes (stored per-user in Redis) ────────────────────────────────
+
+def _saved_key(user_id: str) -> str:
+    return f"saved_recipes:{user_id}"
+
+
+async def save_recipe(user_id: str, recipe: dict) -> bool:
+    r = await _redis()
+    if not r:
+        return False
+    await r.hset(_saved_key(user_id), recipe["id"], json.dumps(recipe))
+    await r.aclose()
+    return True
+
+
+async def list_saved_recipes(user_id: str) -> List[dict]:
+    r = await _redis()
+    if not r:
+        return []
+    data = await r.hgetall(_saved_key(user_id))
+    await r.aclose()
+    return [json.loads(v) for v in data.values()]
+
+
+async def unsave_recipe(user_id: str, recipe_id: str) -> bool:
+    r = await _redis()
+    if not r:
+        return False
+    await r.hdel(_saved_key(user_id), recipe_id)
+    await r.aclose()
+    return True

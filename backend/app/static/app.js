@@ -190,6 +190,26 @@ async function initInventory() {
     } catch (ex) { toast(ex.message, 'error'); }
     finally { setBtn('confirm-btn', false, `Add items`); }
   });
+
+  // Manual add
+  const unitSel = document.getElementById('manual-unit');
+  if (unitSel) unitSel.innerHTML = UNITS.map(u => `<option>${u}</option>`).join('');
+  document.getElementById('manual-add-btn')?.addEventListener('click', async () => {
+    const nameEl = document.getElementById('manual-name');
+    const name = nameEl.value.trim();
+    if (!name) { toast('Enter an item name', 'error'); return; }
+    const quantity = parseFloat(document.getElementById('manual-qty').value) || 1;
+    const unit = document.getElementById('manual-unit').value;
+    setBtn('manual-add-btn', true, 'Add');
+    try {
+      const b = await apiFetch('/inventory/add/', { method: 'POST',
+        body: JSON.stringify({ item_name: name, quantity, unit }) });
+      toast(`Added ${b.item_name} — ${daysLeft(b.expiry_date)}d shelf life · ~RM ${parseFloat(b.estimated_cost).toFixed(2)}`, 'success');
+      nameEl.value = '';
+      await loadInventory();
+    } catch (ex) { toast(ex.message, 'error'); }
+    finally { setBtn('manual-add-btn', false, 'Add'); }
+  });
 }
 
 async function loadInventory() {
@@ -243,7 +263,7 @@ async function consumeItem(id, btn) {
   try {
     const r = await apiFetch(`/inventory/${id}/consume`, { method: 'POST' });
     btn.closest('.item-row').remove();
-    toast(`+CO₂ saved: ${r.co2_saved} kg`, 'success');
+    toast(`Saved ${r.co2_saved} kg CO₂ · RM ${r.money_saved}`, 'success');
   } catch (ex) { toast(ex.message, 'error'); btn.disabled = false; }
 }
 
@@ -278,17 +298,124 @@ async function initRecipes() {
     } catch (ex) { setErr('recipe-err', ex.message); }
     finally { setBtn('gen-btn', false, 'Generate Recipes'); }
   });
+
+  loadSaved();
+}
+
+let _recipes = [];   // generated recipes
+let _saved = [];     // saved recipes
+
+function recipeCardHTML(r, i, ctx) {
+  const tags = [r.category, r.area].filter(Boolean).join(' · ');
+  const meta = ctx === 'gen'
+    ? `Uses ${r.usedIngredientCount} of your ingredients${r.missedIngredientCount>0?` · Missing ${r.missedIngredientCount}`:''}${r.expiringUsedCount>0?` · <span class="recipe-exp">⏳ ${r.expiringUsedCount} expiring</span>`:''}`
+    : (tags || 'Saved recipe');
+  const usedRow = (r.usedIngredients && r.usedIngredients.length)
+    ? `<p class="rd-row"><strong>Your ingredients:</strong> ${r.usedIngredients.join(', ')}</p>` : '';
+  const instrRow = r.instructions
+    ? `<p class="rd-row rd-instructions">${r.instructions}</p>`
+    : `<p class="rd-row text-muted">No instructions provided by source.</p>`;
+  const actions = ctx === 'gen'
+    ? `<button class="btn btn-sm btn-outline" data-act="save">💾 Save</button>
+       <button class="btn btn-sm btn-primary" data-act="cooked">🍳 Cooked</button>`
+    : `<button class="btn btn-sm btn-danger" data-act="remove">🗑 Remove</button>`;
+  const video = r.youtube
+    ? `<a class="btn btn-sm btn-danger" href="${r.youtube}" target="_blank" rel="noopener">▶ Video</a>` : '';
+  return `
+    <div class="recipe-card" data-ctx="${ctx}" data-idx="${i}">
+      ${r.image ? `<img class="recipe-img" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">` : ''}
+      <div class="recipe-body">
+        <p class="recipe-title">${r.title} <span class="rd-caret">▾</span></p>
+        <p class="recipe-meta">${meta}</p>
+        <div class="recipe-details hidden">
+          ${ctx === 'gen' && tags ? `<p class="rd-row rd-tags">${tags}</p>` : ''}
+          ${usedRow}
+          ${instrRow}
+        </div>
+        <div class="recipe-actions">
+          ${actions}
+          ${video}
+        </div>
+      </div>
+    </div>`;
+}
+
+function wireCards(grid) {
+  // Click a card (but not its action buttons) to expand/collapse the details.
+  grid.querySelectorAll('.recipe-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.recipe-actions')) return;
+      const details = card.querySelector('.recipe-details');
+      const caret = card.querySelector('.rd-caret');
+      if (!details) return;
+      details.classList.toggle('hidden');
+      if (caret) caret.textContent = details.classList.contains('hidden') ? '▾' : '▴';
+    });
+  });
+  grid.querySelectorAll('button[data-act]').forEach(btn =>
+    btn.addEventListener('click', e => { e.stopPropagation(); handleRecipeAction(btn); })
+  );
 }
 
 function renderRecipes(recipes) {
-  document.getElementById('recipe-grid').innerHTML = recipes.map(r => `
-    <div class="recipe-card">
-      ${r.image ? `<img class="recipe-img" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">` : ''}
-      <div class="recipe-body">
-        <p class="recipe-title">${r.title}</p>
-        <p class="recipe-meta">Uses ${r.usedIngredientCount} of your ingredients${r.missedIngredientCount>0?` · Missing ${r.missedIngredientCount}`:''}</p>
-      </div>
-    </div>`).join('');
+  _recipes = recipes || [];
+  const grid = document.getElementById('recipe-grid');
+  grid.innerHTML = _recipes.map((r, i) => recipeCardHTML(r, i, 'gen')).join('');
+  wireCards(grid);
+}
+
+function renderSaved(recipes) {
+  _saved = recipes || [];
+  const section = document.getElementById('saved-section');
+  const grid = document.getElementById('saved-grid');
+  if (!_saved.length) { section.classList.add('hidden'); grid.innerHTML = ''; return; }
+  section.classList.remove('hidden');
+  grid.innerHTML = _saved.map((r, i) => recipeCardHTML(r, i, 'saved')).join('');
+  wireCards(grid);
+}
+
+async function loadSaved() {
+  try { renderSaved((await apiFetch('/recipes/saved/')).recipes); } catch {}
+}
+
+async function handleRecipeAction(btn) {
+  const card = btn.closest('.recipe-card');
+  const ctx = card.dataset.ctx;
+  const r = (ctx === 'saved' ? _saved : _recipes)[+card.dataset.idx];
+  if (!r) return;
+  const act = btn.dataset.act;
+
+  if (act === 'save') {
+    btn.disabled = true;
+    try {
+      await apiFetch('/recipes/save/', { method: 'POST', body: JSON.stringify({
+        id: String(r.id), title: r.title, image: r.image || '', youtube: r.youtube || '',
+        instructions: r.instructions || '', category: r.category || '', area: r.area || '',
+      }) });
+      btn.textContent = '✓ Saved';
+      toast('Recipe saved', 'success');
+      loadSaved();
+    } catch (ex) { btn.disabled = false; toast(ex.message, 'error'); }
+
+  } else if (act === 'cooked') {
+    btn.disabled = true;
+    try {
+      const d = await apiFetch('/recipes/cooked/', { method: 'POST',
+        body: JSON.stringify({ ingredients: r.usedIngredients || [] }) });
+      btn.textContent = `✓ Cooked (${d.consumed})`;
+      toast(d.consumed > 0
+        ? `Pantry updated — ${d.consumed} used · ${d.co2_saved} kg CO₂ · RM ${d.money_saved} saved`
+        : 'No matching pantry items to use', d.consumed > 0 ? 'success' : 'info');
+    } catch (ex) { btn.disabled = false; toast(ex.message, 'error'); }
+
+  } else if (act === 'remove') {
+    btn.disabled = true;
+    try {
+      await apiFetch(`/recipes/saved/${encodeURIComponent(r.id)}`, { method: 'DELETE' });
+      toast('Removed from saved', 'info');
+      loadSaved();
+    } catch (ex) { btn.disabled = false; toast(ex.message, 'error'); }
+  }
 }
 
 // ─── Pet ─────────────────────────────────────────────────────────────────────

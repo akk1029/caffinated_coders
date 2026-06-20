@@ -22,6 +22,8 @@ class UserResponse(BaseModel):
     recipes_generated_today: int
     subscription_tier: str
     subscription_expiry: Optional[datetime] = None
+    total_co2_saved: float = 0
+    total_money_saved: float = 0
 
     model_config = {"from_attributes": True}
 
