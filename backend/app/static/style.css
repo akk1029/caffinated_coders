@@ -319,52 +319,6 @@ select.form-input { cursor: pointer; }
 .lb-name   { flex: 1; font-weight: 600; font-size: 14px; }
 .lb-co2    { font-weight: 700; font-size: 13px; color: var(--green); }
 
-/* ── Leaderboard Podium ── */
-.lb-podium {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 8px;
-  margin-bottom: 28px;
-  padding: 8px 0 0;
-}
-.lb-podium-slot        { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.lb-podium-slot.rank-1 { order: 2; }
-.lb-podium-slot.rank-2 { order: 1; }
-.lb-podium-slot.rank-3 { order: 3; }
-
-.lb-pet-img            { object-fit: contain; display: block; }
-.lb-podium-slot.rank-1 .lb-pet-img { width: 110px; height: 110px; }
-.lb-podium-slot.rank-2 .lb-pet-img { width: 88px;  height: 88px;  }
-.lb-podium-slot.rank-3 .lb-pet-img { width: 80px;  height: 80px;  }
-
-@keyframes lb-float-a {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-10px); }
-}
-@keyframes lb-float-b {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-8px); }
-}
-@keyframes lb-float-c {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-12px); }
-}
-.lb-float-1 { animation: lb-float-a 3s   ease-in-out infinite; }
-.lb-float-2 { animation: lb-float-b 3.6s ease-in-out infinite; }
-.lb-float-3 { animation: lb-float-c 4.2s ease-in-out infinite; }
-
-.lb-podium-base {
-  border-radius: 10px; padding: 8px 14px; text-align: center;
-  box-shadow: var(--shadow); min-width: 90px;
-}
-.lb-podium-base.rank-1 { background: #fff8e1; border: 2px solid #fdd835; }
-.lb-podium-base.rank-2 { background: #f5f5f5; border: 2px solid #bdbdbd; }
-.lb-podium-base.rank-3 { background: #fbe9e7; border: 2px solid #ffab91; }
-.lb-podium-medal  { font-size: 20px; }
-.lb-podium-name   { font-size: 11px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
-.lb-podium-co2    { font-size: 11px; color: var(--green); font-weight: 600; }
-
 /* ── Plans ── */
 .plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .plan-card  { background: var(--surface); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow); border: 2px solid var(--border); }
