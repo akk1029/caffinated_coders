@@ -1,11 +1,14 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from app.core.config import settings
 from app.routers import auth, inventory, recipes, payments, pet
 from app.routers import receipts, dashboard, leaderboard
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -21,8 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory=os.path.join(_HERE, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(_HERE, "templates"))
 
 # ─── API routes ───────────────────────────────────────────────────────────────
 app.include_router(auth.router, prefix="/api")
@@ -70,3 +73,7 @@ async def premium_page(request: Request):
 @app.get("/leaderboard", response_class=HTMLResponse)
 async def leaderboard_page(request: Request):
     return templates.TemplateResponse(request, "leaderboard.html")
+
+@app.get("/sw.js")
+async def get_sw():
+    return FileResponse(os.path.join(_HERE, "static", "sw.js"), media_type="application/javascript")
