@@ -342,17 +342,28 @@ async function initPremium() {
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
+<<<<<<< Updated upstream
 function petImage(level) {
   if (level >= 8) return '/static/pets/top-leaderboard.png';
   if (level >= 5) return '/static/pets/wolf-4.png';
   return '/static/pets/fox-4.png';
 }
+=======
+const LB_PET_IMGS = [
+  '/static/pet_rank1.png',
+  '/static/pet_rank2.png',
+  '/static/pet_rank3.png',
+];
+const LB_MEDALS = ['🥇', '🥈', '🥉'];
+const LB_FLOAT  = ['lb-float-1', 'lb-float-2', 'lb-float-3'];
+>>>>>>> Stashed changes
 
 async function initLeaderboard() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
   try {
     const [data, me] = await Promise.all([apiFetch('/leaderboard/'), apiFetch('/auth/me')]);
+<<<<<<< Updated upstream
     const MEDALS = ['🥇','🥈','🥉'];
     const top3 = data.rankings.slice(0, 3);
     const rest  = data.rankings.slice(3);
@@ -384,6 +395,37 @@ async function initLeaderboard() {
         }).join('');
     }
 
+=======
+    const top3 = data.rankings.slice(0, 3);
+    const rest  = data.rankings.slice(3);
+
+    const podiumHTML = `<div class="lb-podium">${
+      top3.map((e, i) => {
+        const isMe = e.user_id === me.user_id;
+        return `
+          <div class="lb-podium-slot rank-${i+1}">
+            <img class="lb-pet-img ${LB_FLOAT[i]}" src="${LB_PET_IMGS[i]}" alt="Rank ${i+1} pet">
+            <div class="lb-podium-base rank-${i+1}">
+              <div class="lb-podium-medal">${LB_MEDALS[i]}</div>
+              <div class="lb-podium-name">${e.username}${isMe?' (you)':''}</div>
+              <div class="lb-podium-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</div>
+            </div>
+          </div>`;
+      }).join('')
+    }</div>`;
+
+    const restHTML = rest.map((e, i) => {
+      const isMe = e.user_id === me.user_id;
+      return `<div class="lb-row${isMe?' me':''}">
+        <span class="lb-rank">#${i + 4}</span>
+        <span class="lb-pet">${petEmoji(e.pet_level||1)}</span>
+        <span class="lb-name">${e.username}${isMe?' (you)':''}</span>
+        <span class="lb-co2">${e.total_co2_saved.toFixed(1)} kg CO₂</span>
+      </div>`;
+    }).join('');
+
+    document.getElementById('lb-list').innerHTML = podiumHTML + restHTML;
+>>>>>>> Stashed changes
     if (data.user_rank) document.getElementById('my-rank').textContent = `Your rank: #${data.user_rank}`;
   } catch (ex) { toast(ex.message, 'error'); }
 }

@@ -29,3 +29,5 @@ class User(Base):
     inventory = relationship("IngredientBatch", back_populates="user")
     pet = relationship("DigitalPet", back_populates="user", uselist=False)
     subscriptions = relationship("SubscriptionLog", back_populates="user")
+    meals = relationship("Meal", back_populates="user")
+    recipes = relationship("Recipe", back_populates="user")

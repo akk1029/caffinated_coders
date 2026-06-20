@@ -3,7 +3,7 @@ import asyncio
 from app.core.database import Base, _get_engine
 
 # Import every model so SQLAlchemy registers it before create_all
-from app.models import user, inventory, pet, subscription, shelf_life  # noqa: F401
+from app.models import user, inventory, pet, subscription, shelf_life, meal, recipe  # noqa: F401
 
 
 async def main():
