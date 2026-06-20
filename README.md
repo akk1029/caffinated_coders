@@ -93,6 +93,7 @@ The result: a Tamagotchi-style nudge that turns a boring chore into a daily habi
 
 ### Try it (deployed)
 1. Open the live app and tap **Install** (or "Add to Home Screen") to get the PWA.
+https://pantrypet.onrender.com
 2. **Register** an account → your pet hatches.
 3. **Add groceries**: scan a receipt, snap a photo, or add manually.
 4. Check the **dashboard** for what's expiring, generate a **recipe**, and tap **Cooked** to clear used items.
