@@ -23,8 +23,12 @@ async def upload_image(
     user: User = Depends(get_current_user),
 ):
     contents = await file.read()
-    detected = await detect_ingredients(contents)
-    return {"detected_ingredients": detected}
+    result = await detect_ingredients(contents)
+    return {
+        "detected_ingredients": result["items"],
+        "demo": result["demo"],
+        "error": result["error"],
+    }
 
 
 @router.post("/confirm/", response_model=List[BatchResponse], status_code=201)

@@ -12,6 +12,8 @@ class DetectedIngredient(BaseModel):
 
 class UploadResponse(BaseModel):
     detected_ingredients: List[DetectedIngredient]
+    demo: bool = False
+    error: Optional[str] = None
 
 
 class BatchConfirm(BaseModel):

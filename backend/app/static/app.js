@@ -426,6 +426,13 @@ async function initInventory() {
     try {
       const fd = new FormData(); fd.append('file', file);
       const d = await apiFetch('/inventory/upload/', { method: 'POST', body: fd });
+      if (d.demo) {
+        toast(`⚠️ Image detection unavailable: ${(d.error || 'not configured').slice(0, 140)}`, 'info');
+        return;
+      } else if (!d.detected_ingredients.length) {
+        toast('No food detected in the photo', 'info');
+        return;
+      }
       const now = new Date();
       pending = [...pending, ...d.detected_ingredients.map(x => ({ item_name: x.item_name, quantity: 1, unit: 'pieces', expiry_date: isoDate(addDays(now, x.suggested_shelf_days)), estimated_cost: 2.00 }))];
       renderPending();
@@ -439,9 +446,14 @@ async function initInventory() {
     try {
       const fd = new FormData(); fd.append('file', file);
       const d = await apiFetch('/receipts/scan/', { method: 'POST', body: fd });
-      const now = new Date();
-      pending = [...pending, ...d.items.map(x => ({ item_name: x.item_name, quantity: x.quantity || 1, unit: x.unit || 'pieces', expiry_date: isoDate(addDays(now, x.suggested_shelf_days)), estimated_cost: x.estimated_cost || 2.00 }))];
-      renderPending();
+      if (d.demo) {
+        toast(`⚠️ Receipt scan unavailable: ${(d.error || 'OCR not configured').slice(0, 140)}`, 'error');
+      } else if (d.count > 0) {
+        toast(`Added ${d.count} item${d.count > 1 ? 's' : ''} from receipt · ${d.scans_used}/${d.scans_limit} scans today`, 'success');
+        await loadInventory();
+      } else {
+        toast('No food items found on the receipt', 'info');
+      }
     } catch (ex) { toast(ex.message, 'error'); }
     finally { setBtn('receipt-btn', false, '🧾 Scan Receipt'); e.target.value = ''; }
   });

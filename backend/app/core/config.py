@@ -14,6 +14,8 @@ class Settings(BaseSettings):
 
     # Google Cloud Vision — leave empty to use Application Default Credentials
     GOOGLE_APPLICATION_CREDENTIALS: str = ""
+    # Google API key (Vision + Translate via REST). Simpler than a service-account JSON.
+    GOOGLE_API_KEY: str = ""
 
     REDIS_URL: str = "redis://localhost:6379/0"
 
