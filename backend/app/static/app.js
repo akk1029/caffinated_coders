@@ -257,12 +257,6 @@ async function discardItem(id, btn) {
 }
 
 // ─── Recipes ─────────────────────────────────────────────────────────────────
-const SAVED_KEY = 'pp_saved_recipes';
-let _currentRecipe = null;
-
-function getSaved() { try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); } catch { return []; } }
-function setSaved(arr) { localStorage.setItem(SAVED_KEY, JSON.stringify(arr)); }
-
 async function initRecipes() {
   if (!requireAuth()) return;
   setNav(); setupHeader();
@@ -274,11 +268,9 @@ async function initRecipes() {
     document.getElementById('limit-alert')?.classList.remove('hidden');
     document.getElementById('gen-btn').disabled = true;
   }
-  renderSaved();
-
   document.getElementById('gen-btn')?.addEventListener('click', async () => {
     clearErr('recipe-err');
-    setBtn('gen-btn', true, 'Generating…');
+    setBtn('gen-btn', true, 'Generate Recipes');
     try {
       const d = await apiFetch('/recipes/generate/', { method: 'POST' });
       renderRecipes(d.recipes);
@@ -288,128 +280,16 @@ async function initRecipes() {
   });
 }
 
-function parseSteps(instructions) {
-  if (!instructions) return [];
-  const numbered = instructions.split(/\r?\n(?=\d+[\.\)])/);
-  if (numbered.length > 2) return numbered.map(s => s.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
-  const paras = instructions.split(/\r?\n\r?\n/).filter(s => s.trim());
-  if (paras.length > 1) return paras.map(s => s.trim());
-  return instructions.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-}
-
-function openRecipeModal(r) {
-  _currentRecipe = r;
-  const modal = document.getElementById('recipe-modal');
-  const img = document.getElementById('modal-img');
-  if (r.image) { img.src = r.image; img.style.display = 'block'; } else { img.style.display = 'none'; }
-  document.getElementById('modal-title').textContent = r.title;
-  document.getElementById('modal-meta').textContent =
-    `${r.category || ''}${r.area ? ' · ' + r.area : ''} · Uses ${r.usedIngredientCount} pantry items · Missing ${r.missedIngredientCount}`;
-
-  const expiringBanner = document.getElementById('modal-expiring-banner');
-  if (r.expiringUsed && r.expiringUsed.length) {
-    expiringBanner.textContent = `⏰ Uses ${r.expiringUsed.length} item${r.expiringUsed.length > 1 ? 's' : ''} expiring soon: ${r.expiringUsed.join(', ')}`;
-    expiringBanner.classList.remove('hidden');
-  } else {
-    expiringBanner.classList.add('hidden');
-  }
-
-  const usedSet = new Set(r.usedIngredients || []);
-  const expiringSet = new Set(r.expiringUsed || []);
-  document.getElementById('modal-ingredients').innerHTML = (r.ingredients || []).map(ing => {
-    const cls = expiringSet.has(ing) ? 'ing-expiring' : usedSet.has(ing) ? 'ing-have' : 'ing-missing';
-    const prefix = expiringSet.has(ing) ? '⏰' : usedSet.has(ing) ? '✓' : '✗';
-    return `<span class="ing-tag ${cls}">${prefix} ${ing}</span>`;
-  }).join('');
-
-  const steps = parseSteps(r.instructions);
-  document.getElementById('modal-steps').innerHTML = steps.map(s => `<li>${s}</li>`).join('');
-
-  const ytBtn = document.getElementById('modal-youtube');
-  if (r.youtube) { ytBtn.href = r.youtube; ytBtn.classList.remove('hidden'); }
-  else { ytBtn.classList.add('hidden'); }
-
-  const isSaved = getSaved().some(s => s.id === r.id);
-  const saveBtn = document.getElementById('modal-save-btn');
-  saveBtn.textContent = isSaved ? '⭐ Saved' : '☆ Save';
-  saveBtn.className = `btn ${isSaved ? 'btn-orange' : 'btn-outline'}`;
-
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeRecipeModal(e) {
-  if (e && e.target !== document.getElementById('recipe-modal')) return;
-  document.getElementById('recipe-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('modal-save-btn')?.addEventListener('click', () => {
-    if (!_currentRecipe) return;
-    const saved = getSaved();
-    const idx = saved.findIndex(s => s.id === _currentRecipe.id);
-    if (idx === -1) { saved.push(_currentRecipe); toast('Recipe saved!', 'success'); }
-    else { saved.splice(idx, 1); toast('Removed from saved', 'info'); }
-    setSaved(saved);
-    const saveBtn = document.getElementById('modal-save-btn');
-    const nowSaved = idx === -1;
-    saveBtn.textContent = nowSaved ? '⭐ Saved' : '☆ Save';
-    saveBtn.className = `btn ${nowSaved ? 'btn-orange' : 'btn-outline'}`;
-    renderSaved();
-  });
-
-  document.getElementById('modal-cooked-btn')?.addEventListener('click', async () => {
-    if (!_currentRecipe) return;
-    const btn = document.getElementById('modal-cooked-btn');
-    btn.disabled = true; btn.textContent = 'Updating…';
-    try {
-      const res = await apiFetch('/recipes/cooked/', {
-        method: 'POST',
-        body: JSON.stringify({ ingredients: _currentRecipe.ingredients || [] }),
-      });
-      if (res.consumed > 0) {
-        toast(`Pantry updated! ${res.consumed} item${res.consumed > 1 ? 's' : ''} marked used · +${res.co2_saved.toFixed(2)} kg CO₂`, 'success');
-        closeRecipeModal();
-      } else {
-        toast('No matching pantry items found — they may already be consumed.', 'info');
-      }
-    } catch (ex) { toast(ex.message, 'error'); }
-    finally { btn.disabled = false; btn.textContent = '✅ I Cooked This'; }
-  });
-});
-
-function recipeCardHTML(r) {
-  const isSaved = getSaved().some(s => s.id === r.id);
-  const expBadge = r.expiringUsed && r.expiringUsed.length
-    ? `<span class="badge-expiring">⏰ Uses ${r.expiringUsed.length} expiring</span><br>`
-    : '';
-  return `<div class="recipe-card" onclick='openRecipeModal(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
-    ${r.image ? `<img class="recipe-img" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">` : ''}
-    <div class="recipe-body">
-      ${expBadge}
-      <p class="recipe-title">${r.title}</p>
-      <p class="recipe-meta">✓ ${r.usedIngredientCount} in pantry${r.missedIngredientCount > 0 ? ` · ✗ ${r.missedIngredientCount} missing` : ' · All in pantry!'}</p>
-      <p style="font-size:11px;color:var(--muted);margin-top:4px">Tap to see recipe →</p>
-    </div>
-  </div>`;
-}
-
 function renderRecipes(recipes) {
-  document.getElementById('recipe-grid').innerHTML = recipes.map(r => recipeCardHTML(r)).join('');
-  renderSaved();
+  document.getElementById('recipe-grid').innerHTML = recipes.map(r => `
+    <div class="recipe-card">
+      ${r.image ? `<img class="recipe-img" src="${r.image}" alt="${r.title}" onerror="this.style.display='none'">` : ''}
+      <div class="recipe-body">
+        <p class="recipe-title">${r.title}</p>
+        <p class="recipe-meta">Uses ${r.usedIngredientCount} of your ingredients${r.missedIngredientCount>0?` · Missing ${r.missedIngredientCount}`:''}</p>
+      </div>
+    </div>`).join('');
 }
-
-function renderSaved() {
-  const saved = getSaved();
-  const section = document.getElementById('saved-section');
-  if (!saved.length) { section?.classList.add('hidden'); return; }
-  section?.classList.remove('hidden');
-  const grid = document.getElementById('saved-grid');
-  if (grid) grid.innerHTML = saved.map(r => recipeCardHTML(r)).join('');
-}
-
-function clearSaved() { setSaved([]); renderSaved(); }
 
 // ─── Pet ─────────────────────────────────────────────────────────────────────
 async function initPet() {

@@ -21,34 +21,4 @@
 </div>
 
 <div id="recipe-grid" class="recipe-grid"></div>
-
-<div id="saved-section" class="hidden">
-  <div class="section-hdr" style="margin-top:24px;margin-bottom:10px">
-    <span class="section-title">⭐ Saved Recipes</span>
-    <button onclick="clearSaved()" class="btn btn-sm" style="font-size:11px;padding:4px 10px">Clear all</button>
-  </div>
-  <div id="saved-grid" class="recipe-grid"></div>
-</div>
-
-<!-- Recipe detail modal -->
-<div id="recipe-modal" class="recipe-modal hidden" onclick="closeRecipeModal(event)">
-  <div class="recipe-modal-inner">
-    <button class="recipe-modal-close" onclick="closeRecipeModal()">&times;</button>
-    <img id="modal-img" class="recipe-modal-img" src="" alt="" onerror="this.style.display='none'">
-    <div class="recipe-modal-body">
-      <p id="modal-title" class="recipe-modal-title"></p>
-      <p id="modal-meta" class="recipe-meta" style="margin-bottom:12px"></p>
-      <div id="modal-expiring-banner" class="alert alert-warning hidden" style="font-size:12px;margin-bottom:12px"></div>
-      <p class="section-title" style="font-size:13px;margin-bottom:6px">Ingredients</p>
-      <div id="modal-ingredients" style="margin-bottom:16px;font-size:13px;line-height:1.8"></div>
-      <p class="section-title" style="font-size:13px;margin-bottom:8px">Steps</p>
-      <ol id="modal-steps" class="recipe-steps"></ol>
-      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-        <button id="modal-cooked-btn" class="btn btn-primary">✅ I Cooked This</button>
-        <button id="modal-save-btn" class="btn btn-outline">☆ Save</button>
-        <a id="modal-youtube" href="#" target="_blank" class="btn btn-outline hidden" style="font-size:12px">▶ Watch on YouTube</a>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}
