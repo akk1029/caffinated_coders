@@ -62,11 +62,12 @@ body {
 
 /* ── Bottom Nav ── */
 .bottom-nav {
-  position: fixed; bottom: 0; height: var(--nav-h);
+  position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-h);
   background: #1B3D2F; border-top: 1px solid rgba(255,255,255,0.07);
-  display: flex; z-index: 200;
-  left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 600px;
+  display: flex; justify-content: center; z-index: 200;
+}
+.bottom-nav .nav-item {
+  max-width: 120px;
 }
 .nav-item {
   flex: 1; display: flex; flex-direction: column;
@@ -563,5 +564,5 @@ select.form-input { cursor: pointer; }
 }
 
 @media (min-width: 600px) {
-  .bottom-nav { left: 50%; transform: translateX(-50%); width: 600px; }
+  .bottom-nav .nav-item { max-width: 140px; }
 }
