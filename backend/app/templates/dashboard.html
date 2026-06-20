@@ -2,12 +2,24 @@
 {% block title %}Dashboard · PantryPet{% endblock %}
 
 {% block content %}
-<h2 id="greeting" style="font-size:20px;font-weight:700;margin-bottom:4px">Hello!</h2>
+<h2 id="greeting" style="font-size:20px;font-weight:800;margin-bottom:4px;color:var(--text)">Hello!</h2>
 <p class="text-muted" style="margin-bottom:16px">Here's your PantryPet overview</p>
 
 <div id="expiry-alert" class="alert alert-danger hidden">
   🚨 <strong>Use these soon:</strong> <span id="expiring-list"></span>
   &mdash; <a href="/recipes" style="color:var(--red);font-weight:700">Get recipes →</a>
+</div>
+
+<div class="card" style="text-align:center">
+  <div class="section-hdr" style="justify-content:center;margin-bottom:14px">
+    <span class="section-title">Your Pet</span>
+  </div>
+  <div id="dash-pet-emoji" style="margin-bottom:8px;position:relative;display:inline-block">🥚</div>
+  <p id="dash-pet-mood" class="text-muted" style="margin-bottom:10px">Loading…</p>
+  <div class="hp-track" style="max-width:200px;margin:0 auto 6px">
+    <div id="dash-hp-fill" class="hp-fill" style="width:100%;background:#5DC98A"></div>
+  </div>
+  <a href="/pet" class="btn btn-primary btn-sm mt-8">Visit Pet →</a>
 </div>
 
 <div class="card-grid-2">
@@ -21,7 +33,7 @@
   </div>
   <div class="stat-card">
     <p class="stat-label">CO₂ Saved</p>
-    <p class="stat-value" id="co2-val" style="color:var(--green-dk)">–</p>
+    <p class="stat-value" id="co2-val" style="color:var(--green)">–</p>
     <p class="stat-unit">kg</p>
   </div>
   <div class="stat-card">
@@ -31,17 +43,6 @@
   </div>
 </div>
 
-<div class="card" style="text-align:center">
-  <div class="section-hdr" style="justify-content:center;margin-bottom:14px">
-    <span class="section-title">Your Pet</span>
-  </div>
-  <div id="dash-pet-emoji" style="font-size:64px;line-height:1.2;margin-bottom:6px;position:relative;display:inline-block">🥚</div>
-  <p id="dash-pet-mood" class="text-muted" style="margin-bottom:10px">Loading…</p>
-  <div class="hp-track" style="max-width:200px;margin:0 auto 6px">
-    <div id="dash-hp-fill" class="hp-fill" style="width:100%;background:#4caf50"></div>
-  </div>
-  <a href="/pet" class="btn btn-primary btn-sm mt-8">Visit Pet →</a>
-</div>
 
 <div class="card">
   <div class="section-hdr">
@@ -58,11 +59,11 @@
   <div class="section-hdr">
     <span class="section-title">My Uploads</span>
   </div>
-  <button id="view-uploads-btn" class="btn btn-blue btn-full">🖼️ View My Photos</button>
+  <button id="view-uploads-btn" class="btn btn-outline btn-full">🖼️ View My Photos</button>
   <div id="uploads-gallery" class="hidden" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"></div>
 </div>
 
-<div id="premium-banner" class="card hidden" style="background:linear-gradient(135deg,#fff8e1,#fff3e0);border:1.5px solid var(--orange);text-align:center">
+<div id="premium-banner" class="card hidden" style="background:linear-gradient(135deg,rgba(232,132,90,0.12),rgba(232,132,90,0.06));border:1.5px solid var(--orange);text-align:center">
   <p style="font-size:22px;margin-bottom:4px">⭐</p>
   <p style="font-weight:800;font-size:15px;margin-bottom:4px">Unlock Premium</p>
   <p class="text-muted" style="font-size:12px;margin-bottom:12px">Unlimited recipes, exclusive pet skins & more.</p>

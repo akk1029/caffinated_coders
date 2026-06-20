@@ -80,8 +80,8 @@ function setBtn(id, busy, label) {
   if (label) b.textContent = busy ? 'Loading…' : label;
 }
 
-function hpColor(hp) { return hp >= 70 ? '#4caf50' : hp >= 40 ? '#ff9800' : '#f44336'; }
-function expiryColor(days) { return (days <= 3) ? '#f44336' : (days <= 7) ? '#ff9800' : '#4caf50'; }
+function hpColor(hp) { return hp >= 75 ? '#5DC98A' : hp >= 50 ? '#8AC95D' : hp >= 25 ? '#E8845A' : '#E05C5C'; }
+function expiryColor(days) { return (days <= 3) ? '#E05C5C' : (days <= 7) ? '#E8845A' : '#5DC98A'; }
 function daysLeft(expiry) { return Math.ceil((new Date(expiry) - Date.now()) / 86400000); }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 function isoDate(d) { return d.toISOString().split('T')[0]; }
@@ -353,12 +353,12 @@ async function initDashboard() {
       const dashPetEl = document.getElementById('dash-pet-emoji');
       dashPetEl.innerHTML = '';
       const dImg = document.createElement('img');
-      dImg.style.cssText = 'width:80px;height:80px;object-fit:contain';
+      dImg.style.cssText = 'width:250px;height:250px;object-fit:contain;filter:drop-shadow(0 6px 28px rgba(93,201,138,0.25))';
       dImg.alt = (PET_TYPES[pet.pet_type] || PET_TYPES.fox).name;
       dImg.onerror = () => {
         const fb = document.createElement('span');
         fb.textContent = petEmoji(pet.pet_type);
-        fb.style.fontSize = '64px';
+        fb.style.fontSize = '160px';
         dashPetEl.replaceChildren(fb);
       };
       dImg.src = petImage(pet.pet_type, pet.health_points, isChampion);
@@ -715,12 +715,12 @@ function renderPet(pet, isChampion = false) {
   petEl.classList.add('pet-bubble-wrap');
 
   const img = document.createElement('img');
-  img.style.cssText = 'width:120px;height:120px;object-fit:contain';
+  img.style.cssText = 'width:300px;height:300px;object-fit:contain';
   img.alt = type.name;
   img.onerror = () => {
     const fb = document.createElement('span');
     fb.textContent = type.emoji;
-    fb.style.fontSize = '100px';
+    fb.style.fontSize = '180px';
     petEl.replaceChildren(fb);
   };
   img.src = petImage(pet.pet_type, pet.health_points, isChampion);

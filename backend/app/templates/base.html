@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#4caf50">
+  <meta name="theme-color" content="#0F2419">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PantryPet">
   <link rel="manifest" href="/static/manifest.json">
-
   <link rel="apple-touch-icon" href="/static/icon-192.png">
   <title>{% block title %}PantryPet{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css">
@@ -18,7 +17,9 @@
 
 <header class="app-header">
   <div class="header-inner">
-    <span class="header-logo">🌿 PantryPet</span>
+    <a href="/dashboard" class="brand-logo">
+      <img src="/static/pets/logo2.jpeg" alt="PantryPet" class="brand-logo-img" id="hdr-logo">
+    </a>
     <div class="header-actions">
       <span id="tier-badge" class="badge"></span>
       <button id="logout-btn" class="btn-icon" title="Logout">⏏</button>
@@ -40,12 +41,14 @@
 
 <div id="toast-container"></div>
 <script src="/static/app.js"></script>
-
 <script>
+  document.getElementById('hdr-logo').onerror = function() {
+    this.outerHTML = '<span style="font-size:18px;font-weight:900;color:#5DC98A;font-family:\'DM Sans\',sans-serif">🌿 PantryPet</span>';
+  };
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
-    .then(() => console.log('Service Worker registered successfully'))
-    .catch(err => console.error('Service Worker registration failed:', err)); 
+      .then(() => console.log('SW registered'))
+      .catch(err => console.error('SW failed:', err));
   }
 </script>
 {% block scripts %}{% endblock %}

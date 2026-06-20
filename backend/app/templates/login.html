@@ -3,19 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#4caf50">
+  <meta name="theme-color" content="#0F2419">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="manifest" href="/static/manifest.json">
   <title>Sign In · PantryPet</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="auth-wrap">
-  <p class="auth-logo">🌿 PantryPet</p>
-  <p class="auth-tagline">Keep your pantry fresh. Keep your pet happy.</p>
 
+<!-- 8 floating leaf decorations -->
+<span class="leaf-deco" style="bottom:-5%;left:8%;animation-duration:9s;animation-delay:0s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:22%;animation-duration:12s;animation-delay:3s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:40%;animation-duration:8s;animation-delay:1.5s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:58%;animation-duration:13s;animation-delay:5s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:72%;animation-duration:10s;animation-delay:2s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:85%;animation-duration:11s;animation-delay:7s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:15%;animation-duration:14s;animation-delay:4s">🌿</span>
+<span class="leaf-deco" style="bottom:-5%;left:92%;animation-duration:9s;animation-delay:9s">🌿</span>
+
+<div class="auth-wrap">
+
+  <!-- Top logos -->
+  <div class="auth-top">
+    <img src="/static/pets/logo1.jpeg" alt="PantryPet" class="auth-icon" id="auth-icon1">
+    <p class="auth-motto">One little pet. One big difference.</p>
+  </div>
+
+  <!-- Rotating tagline -->
+  <p id="rotating-tag" style="font-size:13px;color:#5DC98A;text-align:center;min-height:22px;transition:opacity 0.4s;margin-bottom:24px;font-weight:600;position:relative;z-index:1"></p>
+
+  <!-- Form card -->
   <div class="auth-card">
-    <h2 class="auth-title">Welcome back</h2>
+    <h2 class="auth-title">Welcome back! 👋</h2>
+    <p class="auth-subtitle">Log in to check on your pet 🐾</p>
     <p id="success-msg" class="success-msg hidden">Account created! Sign in below.</p>
 
     <form id="login-form">
@@ -28,13 +48,32 @@
         <input id="password" class="form-input" type="password" placeholder="••••••••" required autocomplete="current-password">
       </div>
       <p id="err" class="error-msg hidden"></p>
-      <button id="submit-btn" class="btn btn-primary btn-full mt-8" type="submit">Sign In</button>
+      <button id="submit-btn" class="auth-submit" type="submit">Let's go! →</button>
     </form>
-
-    <p class="auth-footer">New here? <a href="/register" class="auth-link">Create an account</a></p>
   </div>
+
+  <p class="auth-footer">New here? <a href="/register" class="auth-link">Create an account</a></p>
 </div>
+
 <div id="toast-container"></div>
 <script src="/static/app.js"></script>
+<script>
+  document.getElementById('auth-icon1').onerror = function() { this.style.display='none'; };
+  document.getElementById('auth-icon2').onerror = function() { this.outerHTML='<span style="font-size:22px;font-weight:900;color:#5DC98A;letter-spacing:-.01em">PantryPet</span>'; };
+
+  const tags = [
+    "Your pantry. Your pet. Your responsibility. 🌿",
+    "Don't let your food — or your pet — down! 🐾",
+    "Scan. Cook. Nurture. Level up together! ✨"
+  ];
+  let ti = 0;
+  const el = document.getElementById('rotating-tag');
+  function rotateTags() {
+    el.style.opacity = 0;
+    setTimeout(() => { el.textContent = tags[ti++ % tags.length]; el.style.opacity = 1; }, 400);
+  }
+  rotateTags();
+  setInterval(rotateTags, 3000);
+</script>
 </body>
 </html>
