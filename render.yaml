@@ -1,8 +1,7 @@
 # Render Blueprint — provisions the web app + Postgres + Redis with HTTPS.
 # Deploy: Render Dashboard -> New -> Blueprint -> pick this repo.
-# After the first deploy, open a Shell on the web service and run:
-#     python init_db.py        (create tables)
-#     python seed.py           (optional demo data)
+# Tables auto-create on startup (AUTO_INIT_DB=true), so no shell step is needed.
+# Just register an account at /register after the first deploy.
 
 databases:
   - name: pantrypet-db
@@ -36,6 +35,8 @@ services:
       - key: SECRET_KEY
         generateValue: true     # Render generates a strong random value
       - key: GOOGLE_API_KEY
-        sync: false             # set this manually in the dashboard (secret)
+        sync: false             # optional — only if you have Google Vision billing
+      - key: OCR_SPACE_API_KEY
+        sync: false             # paste your free ocr.space key in the dashboard
       - key: DEBUG
         value: "false"
